@@ -1,0 +1,25 @@
+SOCIÉTÉ EXEMPLE SARL
+12 rue des Lilas, 75011 Paris
+Email : contact@exemple.fr
+Tél : 01 23 45 67 89
+SIRET : 123 456 789 00012
+TVA : FR32 123456789
+
+FACTURE N° F-2026-0042
+Date de facture : 22/07/2026
+
+Client : Jean Dupont
+Adresse : 8 avenue du Général, 69003 Lyon
+
+Désignation                     Quantité      Prix
+Prestation de conseil               3       900,00 €
+Frais de déplacement                1       120,50 €
+
+Total HT : 1 020,50 €
+TVA (20%) : 204,10 €
+Total TTC : 1 224,60 €
+
+Règlement par virement.
+IBAN : FR76 3000 6000 0112 3456 7890 189
+Échéance : 21 août 2026
+Site : https://www.exemple.fr

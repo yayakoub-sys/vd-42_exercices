@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moteur d'extraction de documents</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>📄 Moteur d'extraction de documents</h1>
+    <p class="subtitle">Local · sans IA · consignation SQLite interrogeable</p>
+    <div id="status" class="status">Chargement…</div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="searchbar">
+        <input id="q" type="search" placeholder="Rechercher dans les documents…" />
+        <button id="searchBtn">Rechercher</button>
+        <button id="allBtn" class="secondary">Tout lister</button>
+      </div>
+      <ul id="results" class="results"></ul>
+    </section>
+
+    <section id="detail" class="panel hidden">
+      <div class="detail-head">
+        <h2 id="detailName"></h2>
+        <div class="actions">
+          <a id="exportJson" class="btn" download>Export JSON</a>
+          <a id="exportCsv" class="btn" download>Export CSV</a>
+          <button id="closeDetail" class="secondary">Fermer</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="entites">Entités</button>
+        <button class="tab" data-tab="champs">Champs</button>
+        <button class="tab" data-tab="texte">Texte</button>
+        <button class="tab" data-tab="json">JSON</button>
+      </div>
+      <div id="tab-entites" class="tabpane"></div>
+      <div id="tab-champs" class="tabpane hidden"></div>
+      <pre id="tab-texte" class="tabpane hidden"></pre>
+      <pre id="tab-json" class="tabpane hidden"></pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

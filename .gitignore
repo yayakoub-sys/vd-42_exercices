@@ -1,0 +1,23 @@
+# Base de données générée et données locales
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Configuration locale (contient le chemin du disque de l'utilisateur)
+config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

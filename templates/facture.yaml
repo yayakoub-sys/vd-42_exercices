@@ -1,0 +1,37 @@
+# Modèle de champs « facture ».
+# Le modèle s'active si l'un des mots-clés "match" apparaît dans le document.
+# Pour chaque champ, le premier motif regex qui correspond remplit la valeur
+# (groupe 1 s'il existe, sinon toute la correspondance).
+
+name: facture
+match: ["facture", "invoice", "avoir"]
+
+fields:
+  numero_facture:
+    patterns:
+      - "facture\\s*(?:n[°o]|#|num[ée]ro)\\s*[:.]?\\s*([A-Za-z0-9][A-Za-z0-9\\-_/]+)"
+      - "invoice\\s*(?:no|#|number)\\s*[:.]?\\s*([A-Za-z0-9][A-Za-z0-9\\-_/]+)"
+
+  date_facture:
+    patterns:
+      - "date\\s*(?:de\\s*facture|d['’]?[ée]mission|facture)?\\s*[:.]?\\s*(\\d{1,2}[/.\\-]\\d{1,2}[/.\\-]\\d{2,4})"
+      - "date\\s*[:.]?\\s*(\\d{4}[/.\\-]\\d{1,2}[/.\\-]\\d{1,2})"
+
+  total_ttc:
+    patterns:
+      - "total\\s*ttc\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+      - "montant\\s*total\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+      - "total\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+
+  total_ht:
+    patterns:
+      - "total\\s*ht\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+      - "montant\\s*ht\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+
+  tva:
+    patterns:
+      - "(?:montant\\s*)?tva\\s*(?:\\([0-9.,]+\\s*%\\))?\\s*[:.]?\\s*([0-9][0-9 .,]*)\\s*(?:€|eur)"
+
+  fournisseur:
+    patterns:
+      - "(?:fournisseur|vendeur|[ée]mis\\s*par|de)\\s*[:.]\\s*([^\\n]{2,60})"

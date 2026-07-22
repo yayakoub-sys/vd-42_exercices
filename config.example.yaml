@@ -1,0 +1,33 @@
+# Configuration du moteur d'extraction — cible Windows
+# Copier ce fichier en "config.yaml" puis ajuster les valeurs.
+
+# Lettre du lecteur du disque externe « yayakoub disque ».
+# Repérable dans l'Explorateur Windows (ex: E:\ ou D:\).
+# Sur macOS ce serait "/Volumes/yayakoub disque", sur Linux "/media/<user>/yayakoub disque".
+watch_path: "E:\\"
+
+# Nom attendu du volume (facultatif). Si renseigné, le moteur vérifie au démarrage
+# que le lecteur surveillé porte bien ce libellé, pour éviter d'indexer le mauvais disque.
+expected_volume_label: "yayakoub disque"
+
+# Langues OCR (codes Tesseract). fra = français, eng = anglais.
+ocr_langs: [fra, eng]
+
+# Balayer tout l'existant au démarrage, puis surveiller en continu les nouveaux fichiers.
+poll_on_start: true
+
+# Extensions traitées (en minuscules, avec le point).
+extensions: [".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".docx", ".xlsx", ".csv", ".txt", ".md"]
+
+# Nombre maximum de tentatives pour un fichier en erreur avant abandon.
+max_retries: 3
+
+# Emplacement de la base SQLite (relative au dossier du projet).
+db_path: "data/docs.db"
+
+# Dossier des modèles de champs personnalisés (.yaml).
+templates_dir: "templates"
+
+# Adresse/port de l'interface web locale (localhost uniquement).
+host: "127.0.0.1"
+port: 8000

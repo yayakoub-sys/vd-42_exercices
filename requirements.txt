@@ -1,0 +1,23 @@
+# Moteur local d'extraction & consignation de documents (sans IA)
+# Toutes les dépendances sont open-source et gratuites.
+
+# --- Extraction ---
+PyMuPDF==1.24.10        # PDF texte (fitz) : texte + métadonnées
+python-docx==1.1.2      # Word .docx
+openpyxl==3.1.5         # Excel .xlsx
+pdfplumber==0.11.4      # extraction de tableaux PDF (complément PyMuPDF)
+
+# --- OCR (moteur Tesseract) ---
+pytesseract==0.3.13     # OCR des images (jpg, png, tiff...)
+ocrmypdf==16.4.3        # OCR des PDF scannés (PDF -> PDF+texte)
+Pillow==10.4.0          # manipulation d'images pour l'OCR
+
+# --- Surveillance de dossier ---
+watchdog==5.0.2         # détection automatique des nouveaux fichiers
+
+# --- API / UI web locale ---
+fastapi==0.115.0
+uvicorn==0.30.6
+
+# --- Configuration ---
+PyYAML==6.0.2
