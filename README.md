@@ -76,6 +76,31 @@ poll_on_start: true
 
 Ouvrir ensuite **http://127.0.0.1:8000** pour rechercher et consulter.
 
+## Garantie de finitude (aucun fichier perdu en silence)
+
+Le principe central : **chaque fichier finit dans un état visible**, et
+`total = traités + classés + à_résoudre + disparus + en_cours` — **toujours**. Un tableau de
+bord de couverture affiche ce compte en direct (objectif : 100 %, 0 fichier invisible).
+
+- **Triage à l'entrée** (`triage.py`) : chaque fichier est classé vite et sans gaspiller
+  d'énergie — `readable` (on extrait), ou `noise` / `technical` / `video` / `raw_photo` /
+  `unknown` (**catalogués** : on sait où c'est et ce que c'est, sans lire le contenu).
+- **Cascade de résolution** : l'échec est le **dernier** recours. Le worker essaie plusieurs
+  stratégies (lecteur natif → Tika si activé → OCR forcé pour les PDF) avant d'abandonner.
+- **Quality gate (Write-Audit-Publish)** : un fichier n'est marqué **traité** qu'après un
+  **audit** de son résultat (texte attendu mais vide = non traité). Pas de demi-travail.
+- **File « à résoudre » = liste de travail, pas un cimetière** : les échecs gardent un
+  **motif** et sont **rejoués** automatiquement (au démarrage, périodiquement, ou via le bouton
+  « Rejouer » de l'interface). Impossible que des milliers de fichiers disparaissent sans trace.
+- **Découpage des gros fichiers** : les PDF sont océrisés **page par page, par lots**
+  (`batch_pages`), et les gros fichiers texte lus par blocs avec garde-fou mémoire
+  (`max_text_bytes`) → la machine **ne bloque jamais**.
+- **Cartographie a posteriori** : la carte du disque n'est pas construite d'avance ; elle se
+  **reconstitue** par requêtes sur le registre (`jobs`) une fois les fichiers passés.
+
+Extraction universelle optionnelle : **Apache Tika** (`enable_tika: true`, nécessite Java)
+étend la lecture à 1400+ formats ; sinon les lecteurs Python natifs suffisent (mode léger).
+
 ## Reprise sur incident (« reprendre quand c'est cassé »)
 
 La robustesse repose sur la table `jobs` (un enregistrement par fichier : statut, hash,
@@ -106,7 +131,7 @@ documents via `match` (mots-clés). Voir `templates/facture.yaml` comme exemple.
 | `entites`        | chaque info qualifiée : `type, value, raw, position`           |
 | `champs`         | valeurs des modèles de champs personnalisés                    |
 | `documents_fts`  | index plein-texte (FTS5) pour la recherche instantanée         |
-| `jobs`           | file d'attente et suivi d'état (reprise sur incident)          |
+| `jobs`           | registre maître : état de finitude + motif de chaque fichier    |
 
 La base est un simple fichier (`data/docs.db`), lisible avec n'importe quel outil SQLite.
 

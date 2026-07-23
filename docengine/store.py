@@ -19,11 +19,24 @@ import time
 from pathlib import Path
 from typing import Any, Iterable
 
-# Statuts possibles d'un fichier dans la file d'attente.
+# États du cycle de vie d'un fichier (garantie de finitude).
+# Non terminaux : PENDING, PROCESSING.
+# Terminaux     : DONE (traité + audité), CLASSIFIED (bruit/technique/vidéo/RAW,
+#                 catalogué sans extraction profonde), TO_RESOLVE (échec après
+#                 toute la cascade — rejouable, jamais un cimetière), MISSING
+#                 (fichier disparu du disque pendant le traitement).
 STATUS_PENDING = "pending"
 STATUS_PROCESSING = "processing"
 STATUS_DONE = "done"
-STATUS_ERROR = "error"
+STATUS_CLASSIFIED = "classified"
+STATUS_TO_RESOLVE = "to_resolve"
+STATUS_MISSING = "missing"
+
+# Rétro-compat : ancien statut d'erreur, désormais synonyme de TO_RESOLVE.
+STATUS_ERROR = STATUS_TO_RESOLVE
+
+# Ensemble des états terminaux (pour la réconciliation).
+TERMINAL_STATUSES = (STATUS_DONE, STATUS_CLASSIFIED, STATUS_TO_RESOLVE, STATUS_MISSING)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -80,16 +93,24 @@ CREATE TRIGGER IF NOT EXISTS documents_au AFTER UPDATE ON documents BEGIN
     INSERT INTO documents_fts(rowid, name, text) VALUES (new.id, new.name, new.text);
 END;
 
+-- Registre maître : une ligne par fichier découvert, avec son état de finitude.
 CREATE TABLE IF NOT EXISTS jobs (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    path          TEXT NOT NULL UNIQUE,      -- chemin du fichier source
-    hash          TEXT,                      -- hash du contenu (une fois lu)
+    path          TEXT NOT NULL UNIQUE,      -- chemin complet du fichier source
+    hash          TEXT,                      -- SHA-256 du contenu (une fois lu)
     status        TEXT NOT NULL DEFAULT 'pending',
+    kind          TEXT,                      -- classe de triage (readable, noise…)
+    reason        TEXT,                      -- motif (classification ou échec)
+    stage         TEXT,                      -- dernière étape de la cascade tentée
+    size          INTEGER,                   -- taille en octets
+    depth         INTEGER,                   -- profondeur d'imbrication (nb de dossiers)
+    mtime         REAL,                      -- date de modification du fichier
     attempts      INTEGER NOT NULL DEFAULT 0,
     error         TEXT,
     updated_at    REAL
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+CREATE INDEX IF NOT EXISTS idx_jobs_kind   ON jobs(kind);
 """
 
 
@@ -106,7 +127,18 @@ class Store:
         self.conn.execute("PRAGMA journal_mode=WAL;")   # robustesse aux crashs
         self.conn.execute("PRAGMA foreign_keys=ON;")
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Ajoute les colonnes manquantes sur une base plus ancienne (idempotent)."""
+        existing = {row["name"] for row in self.conn.execute("PRAGMA table_info(jobs)")}
+        for col, ddl in (
+            ("kind", "TEXT"), ("reason", "TEXT"), ("stage", "TEXT"),
+            ("size", "INTEGER"), ("depth", "INTEGER"), ("mtime", "REAL"),
+        ):
+            if col not in existing:
+                self.conn.execute(f"ALTER TABLE jobs ADD COLUMN {col} {ddl}")
 
     def close(self) -> None:
         self.conn.close()
@@ -114,18 +146,21 @@ class Store:
     # ------------------------------------------------------------------ #
     # File d'attente / reprise sur incident
     # ------------------------------------------------------------------ #
-    def enqueue(self, path: str) -> None:
-        """Ajoute un fichier à la file s'il n'y est pas déjà."""
+    def enqueue(self, path: str, *, size: int | None = None,
+                depth: int | None = None, mtime: float | None = None) -> None:
+        """Ajoute un fichier au registre s'il n'y est pas déjà (avec ses métadonnées)."""
         self.conn.execute(
-            "INSERT OR IGNORE INTO jobs(path, status, updated_at) VALUES (?, ?, ?)",
-            (path, STATUS_PENDING, time.time()),
+            "INSERT OR IGNORE INTO jobs(path, status, size, depth, mtime, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (path, STATUS_PENDING, size, depth, mtime, time.time()),
         )
         self.conn.commit()
 
     def recover_stuck_jobs(self) -> int:
         """Au démarrage : les jobs restés 'processing' (crash) repassent 'pending'.
 
-        Retourne le nombre de jobs récupérés.
+        Garantie de reprise : aucun fichier ne reste coincé « en cours » après un
+        plantage. Retourne le nombre de jobs récupérés.
         """
         cur = self.conn.execute(
             "UPDATE jobs SET status=?, updated_at=? WHERE status=?",
@@ -134,19 +169,15 @@ class Store:
         self.conn.commit()
         return cur.rowcount
 
-    def next_pending(self, max_retries: int) -> sqlite3.Row | None:
-        """Réserve le prochain job à traiter (le passe en 'processing').
+    def next_pending(self, max_retries: int = 0) -> sqlite3.Row | None:
+        """Réserve atomiquement le prochain fichier à traiter (passe en 'processing').
 
-        Ne prend que les 'pending' et les 'error' sous le plafond de tentatives.
-        Opération atomique : évite qu'un même fichier soit pris deux fois.
+        Ne prend que les 'pending' (le rejeu des 'to_resolve' se fait via
+        requeue_to_resolve). max_retries est accepté pour compatibilité.
         """
         row = self.conn.execute(
-            """
-            SELECT * FROM jobs
-            WHERE status = ? OR (status = ? AND attempts < ?)
-            ORDER BY id LIMIT 1
-            """,
-            (STATUS_PENDING, STATUS_ERROR, max_retries),
+            "SELECT * FROM jobs WHERE status = ? ORDER BY id LIMIT 1",
+            (STATUS_PENDING,),
         ).fetchone()
         if row is None:
             return None
@@ -157,25 +188,105 @@ class Store:
         self.conn.commit()
         return row
 
-    def mark_done(self, job_id: int, file_hash: str) -> None:
+    def mark_done(self, job_id: int, file_hash: str, *,
+                  kind: str | None = None, stage: str | None = None) -> None:
+        """État terminal : fichier extrait ET audité avec succès."""
         self.conn.execute(
-            "UPDATE jobs SET status=?, hash=?, error=NULL, updated_at=? WHERE id=?",
-            (STATUS_DONE, file_hash, time.time(), job_id),
+            "UPDATE jobs SET status=?, hash=?, kind=COALESCE(?, kind), stage=?, "
+            "reason=NULL, error=NULL, updated_at=? WHERE id=?",
+            (STATUS_DONE, file_hash, kind, stage, time.time(), job_id),
         )
         self.conn.commit()
 
-    def mark_error(self, job_id: int, message: str) -> None:
+    def mark_classified(self, job_id: int, kind: str, reason: str,
+                        file_hash: str | None = None) -> None:
+        """État terminal : catalogué sans extraction profonde (bruit, vidéo, RAW…).
+
+        Le fichier reste COMPTÉ et recensé — jamais jeté en silence.
+        """
         self.conn.execute(
-            "UPDATE jobs SET status=?, attempts=attempts+1, error=?, updated_at=? WHERE id=?",
-            (STATUS_ERROR, message, time.time(), job_id),
+            "UPDATE jobs SET status=?, kind=?, reason=?, hash=COALESCE(?, hash), "
+            "error=NULL, updated_at=? WHERE id=?",
+            (STATUS_CLASSIFIED, kind, reason, file_hash, time.time(), job_id),
         )
         self.conn.commit()
+
+    def mark_to_resolve(self, job_id: int, reason: str, *,
+                        stage: str | None = None, message: str | None = None) -> None:
+        """État terminal (rejouable) : échec après toute la cascade. NE disparaît pas.
+
+        C'est une liste de travail avec motif, pas un cimetière : requeue_to_resolve
+        la ré-injecte pour un nouvel essai.
+        """
+        self.conn.execute(
+            "UPDATE jobs SET status=?, reason=?, stage=?, error=?, "
+            "attempts=attempts+1, updated_at=? WHERE id=?",
+            (STATUS_TO_RESOLVE, reason, stage, message, time.time(), job_id),
+        )
+        self.conn.commit()
+
+    def mark_missing(self, job_id: int) -> None:
+        """État terminal : le fichier a disparu du disque pendant le traitement."""
+        self.conn.execute(
+            "UPDATE jobs SET status=?, reason='fichier disparu', updated_at=? WHERE id=?",
+            (STATUS_MISSING, time.time(), job_id),
+        )
+        self.conn.commit()
+
+    def requeue_to_resolve(self, max_attempts: int) -> int:
+        """Rejoue les fichiers 'to_resolve' sous le plafond de tentatives -> 'pending'.
+
+        Appelé périodiquement et au démarrage : la file d'échecs se vide d'elle-même
+        au fil des corrections. Retourne le nombre de fichiers réinjectés.
+        """
+        cur = self.conn.execute(
+            "UPDATE jobs SET status=?, updated_at=? WHERE status=? AND attempts < ?",
+            (STATUS_PENDING, time.time(), STATUS_TO_RESOLVE, max_attempts),
+        )
+        self.conn.commit()
+        return cur.rowcount
 
     def job_counts(self) -> dict[str, int]:
         rows = self.conn.execute(
             "SELECT status, COUNT(*) AS n FROM jobs GROUP BY status"
         ).fetchall()
         return {r["status"]: r["n"] for r in rows}
+
+    def reconciliation(self) -> dict[str, Any]:
+        """Rapport de couverture : total = somme des états. Garantit 0 fichier invisible.
+
+        `accounted` = fichiers dans un état terminal ; `covered` True si tout le
+        registre est terminal (plus rien en attente/en cours).
+        """
+        counts = self.job_counts()
+        total = sum(counts.values())
+        accounted = sum(counts.get(s, 0) for s in TERMINAL_STATUSES)
+        in_flight = counts.get(STATUS_PENDING, 0) + counts.get(STATUS_PROCESSING, 0)
+        return {
+            "total": total,
+            "counts": counts,
+            "accounted": accounted,
+            "in_flight": in_flight,
+            "covered": total > 0 and in_flight == 0,
+            "coverage_pct": round(100 * accounted / total, 2) if total else 0.0,
+        }
+
+    def reasons_breakdown(self, status: str = STATUS_TO_RESOLVE) -> list[dict[str, Any]]:
+        """Répartition des motifs pour un état (ex. pourquoi des fichiers sont à résoudre)."""
+        rows = self.conn.execute(
+            "SELECT reason, COUNT(*) AS n FROM jobs WHERE status=? GROUP BY reason "
+            "ORDER BY n DESC",
+            (status,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def list_by_status(self, status: str, limit: int = 200) -> list[dict[str, Any]]:
+        rows = self.conn.execute(
+            "SELECT id, path, kind, reason, stage, size, attempts, error "
+            "FROM jobs WHERE status=? ORDER BY id LIMIT ?",
+            (status, limit),
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     # ------------------------------------------------------------------ #
     # Consignation des documents (transactionnelle)
@@ -185,6 +296,12 @@ class Store:
             "SELECT 1 FROM documents WHERE hash=? LIMIT 1", (file_hash,)
         ).fetchone()
         return row is not None
+
+    def get_document_id_by_hash(self, file_hash: str) -> int | None:
+        row = self.conn.execute(
+            "SELECT id FROM documents WHERE hash=? LIMIT 1", (file_hash,)
+        ).fetchone()
+        return row["id"] if row else None
 
     def save_document(
         self,

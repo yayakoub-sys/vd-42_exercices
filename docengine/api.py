@@ -29,11 +29,32 @@ def create_app(config: Config | None = None, store: Store | None = None) -> Fast
 
     @app.get("/api/status")
     def status() -> dict:
+        recon = store.reconciliation()
         return {
             "watch_path": config.watch_path,
-            "jobs": store.job_counts(),
+            "jobs": recon["counts"],
+            "reconciliation": recon,
             "documents": len(store.list_documents(limit=1_000_000)),
         }
+
+    @app.get("/api/reconciliation")
+    def reconciliation() -> dict:
+        """Rapport de couverture : total = somme des états, % couvert, 0 invisible."""
+        recon = store.reconciliation()
+        recon["reasons_to_resolve"] = store.reasons_breakdown("to_resolve")
+        recon["reasons_classified"] = store.reasons_breakdown("classified")
+        return recon
+
+    @app.get("/api/registry")
+    def registry(status_: str = Query("to_resolve", alias="status"), limit: int = 200) -> list[dict]:
+        """Liste les fichiers d'un état donné (ex. à résoudre) — jamais invisibles."""
+        return store.list_by_status(status_, limit=limit)
+
+    @app.post("/api/requeue")
+    def requeue() -> dict:
+        """Rejoue les fichiers 'à résoudre' (sous le plafond de tentatives)."""
+        n = store.requeue_to_resolve(max(config.max_retries, 1))
+        return {"requeued": n}
 
     @app.get("/api/documents")
     def documents(limit: int = 100, offset: int = 0) -> list[dict]:

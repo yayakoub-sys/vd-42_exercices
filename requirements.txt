@@ -21,3 +21,11 @@ uvicorn==0.30.6
 
 # --- Configuration ---
 PyYAML==6.0.2
+
+# --- Optionnel : extraction universelle (1400+ formats). Nécessite Java. ---
+# Décommenter pour activer le repli Apache Tika (config: enable_tika: true).
+# tika==2.6.0
+
+# --- Optionnel : détection d'images quasi-identiques (copies de copies) ---
+# imagehash==4.3.1
+

@@ -27,12 +27,20 @@ from typing import Any
 # texte » (scanné) et bascule vers l'OCR.
 MIN_PDF_TEXT_CHARS = 16
 
+# Découpage : nombre de pages traitées par lot (mémoire constante sur gros PDF).
+DEFAULT_BATCH_PAGES = 5
+
+# Garde-fou mémoire pour les très gros fichiers texte (octets lus au maximum).
+DEFAULT_MAX_TEXT_BYTES = 50 * 1024 * 1024  # 50 Mo
+
 
 @dataclass
 class ExtractResult:
     text: str = ""
     structure: dict[str, Any] = field(default_factory=dict)
     method: str = "none"
+    truncated: bool = False   # True si un garde-fou mémoire a limité la lecture
+    pages: int = 0
 
 
 class ExtractionError(Exception):
@@ -71,13 +79,30 @@ def guess_mime(ext: str) -> str:
 # --------------------------------------------------------------------------- #
 # Extracteurs par type
 # --------------------------------------------------------------------------- #
-def _extract_txt(path: Path) -> ExtractResult:
-    text = path.read_text(encoding="utf-8", errors="replace")
-    return ExtractResult(text=text, method="text")
+def _extract_txt(path: Path, max_bytes: int = DEFAULT_MAX_TEXT_BYTES) -> ExtractResult:
+    """Texte lu par blocs, avec garde-fou mémoire (jamais tout charger si énorme)."""
+    chunks: list[str] = []
+    read = 0
+    truncated = False
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        while True:
+            block = fh.read(1 << 20)  # 1 Mo à la fois
+            if not block:
+                break
+            chunks.append(block)
+            read += len(block.encode("utf-8", errors="ignore"))
+            if read >= max_bytes:
+                truncated = True
+                break
+    return ExtractResult(text="".join(chunks), method="text", truncated=truncated)
 
 
-def _extract_pdf(path: Path, ocr_langs: str) -> ExtractResult:
-    """PDF : texte natif via PyMuPDF ; bascule OCR si le PDF est scanné."""
+def _extract_pdf(path: Path, ocr_langs: str, batch_pages: int = DEFAULT_BATCH_PAGES) -> ExtractResult:
+    """PDF : texte natif via PyMuPDF (page par page) ; bascule OCR si scanné.
+
+    Le traitement est **par lots de pages** : à tout instant une seule page est en
+    mémoire, ce qui garde la machine légère même sur un rapport de 500 pages.
+    """
     try:
         import fitz  # PyMuPDF
     except ImportError as exc:  # pragma: no cover
@@ -85,48 +110,53 @@ def _extract_pdf(path: Path, ocr_langs: str) -> ExtractResult:
 
     parts: list[str] = []
     titles: list[str] = []
+    n_pages = 0
     with fitz.open(path) as doc:
-        for page in doc:
+        n_pages = doc.page_count
+        for page in doc:  # itération paresseuse, une page à la fois
             parts.append(page.get_text("text"))
-        # Titres approximatifs = signets/table des matières s'il y en a.
-        for lvl, title, _page in doc.get_toc() or []:
+        for _lvl, title, _page in doc.get_toc() or []:
             titles.append(title)
     text = "\n".join(parts).strip()
 
     if len(text) >= MIN_PDF_TEXT_CHARS:
         return ExtractResult(
-            text=text, method="pdf-text",
+            text=text, method="pdf-text", pages=n_pages,
             structure={"titres": titles} if titles else {},
         )
 
-    # Peu ou pas de texte -> PDF scanné : on tente l'OCR.
-    return _ocr_pdf(path, ocr_langs)
+    # Peu ou pas de texte -> PDF scanné : OCR page par page, par lots.
+    return _ocr_pdf_batched(path, ocr_langs, batch_pages)
 
 
-def _ocr_pdf(path: Path, ocr_langs: str) -> ExtractResult:
-    """OCR d'un PDF scanné via ocrmypdf, puis relecture du texte avec PyMuPDF."""
+def _ocr_pdf_batched(path: Path, ocr_langs: str, batch_pages: int) -> ExtractResult:
+    """OCR d'un PDF scanné page par page (rendu + Tesseract), mémoire constante.
+
+    Chaque page est rendue en image, océrisée, puis libérée avant la suivante :
+    aucun gros fichier n'encombre la mémoire. Traité par lots de `batch_pages`.
+    """
     try:
-        import ocrmypdf
         import fitz
+        import pytesseract
+        from PIL import Image
     except ImportError as exc:  # pragma: no cover
         raise ExtractionError(
-            "OCR indisponible : installez ocrmypdf + le moteur Tesseract."
+            "OCR indisponible : installez PyMuPDF + pytesseract + Pillow + Tesseract."
         ) from exc
 
-    with tempfile.TemporaryDirectory() as tmp:
-        out_pdf = os.path.join(tmp, "ocr.pdf")
-        try:
-            ocrmypdf.ocr(
-                str(path), out_pdf,
-                language=ocr_langs.replace("+", "+"),
-                force_ocr=True, progress_bar=False, quiet=True,
-            )
-        except Exception as exc:  # ocrmypdf lève diverses exceptions
-            raise ExtractionError(f"Échec OCR du PDF : {exc}") from exc
-
-        with fitz.open(out_pdf) as doc:
-            text = "\n".join(page.get_text("text") for page in doc).strip()
-    return ExtractResult(text=text, method="pdf-ocr")
+    texts: list[str] = []
+    with fitz.open(path) as doc:
+        n_pages = doc.page_count
+        for start in range(0, n_pages, batch_pages):
+            for i in range(start, min(start + batch_pages, n_pages)):
+                page = doc.load_page(i)
+                pix = page.get_pixmap(dpi=200)
+                try:
+                    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+                    texts.append(pytesseract.image_to_string(img, lang=ocr_langs))
+                finally:
+                    pix = None  # libère la page rendue avant la suivante
+    return ExtractResult(text="\n".join(texts).strip(), method="pdf-ocr", pages=n_pages)
 
 
 def _extract_image(path: Path, ocr_langs: str) -> ExtractResult:
@@ -223,22 +253,32 @@ def _extract_csv(path: Path) -> ExtractResult:
 # --------------------------------------------------------------------------- #
 # Point d'entrée
 # --------------------------------------------------------------------------- #
-def extract(path: str | Path, ocr_langs: str = "fra+eng") -> ExtractResult:
-    """Extrait le contenu d'un fichier en routant selon son extension."""
+def extract(
+    path: str | Path,
+    ocr_langs: str = "fra+eng",
+    *,
+    batch_pages: int = DEFAULT_BATCH_PAGES,
+    max_text_bytes: int = DEFAULT_MAX_TEXT_BYTES,
+) -> ExtractResult:
+    """Extrait le contenu d'un fichier en routant selon son extension.
+
+    `batch_pages` contrôle le découpage des PDF (OCR page par page) ;
+    `max_text_bytes` borne la lecture des très gros fichiers texte.
+    """
     path = Path(path)
     ext = path.suffix.lower()
 
     if ext in (".txt", ".md"):
-        return _extract_txt(path)
+        return _extract_txt(path, max_bytes=max_text_bytes)
     if ext == ".pdf":
-        return _extract_pdf(path, ocr_langs)
-    if ext in (".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp"):
+        return _extract_pdf(path, ocr_langs, batch_pages=batch_pages)
+    if ext in (".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".gif", ".webp"):
         return _extract_image(path, ocr_langs)
     if ext == ".docx":
         return _extract_docx(path)
     if ext == ".xlsx":
         return _extract_xlsx(path)
-    if ext == ".csv":
+    if ext in (".csv", ".tsv"):
         return _extract_csv(path)
 
     raise ExtractionError(f"Type de fichier non pris en charge : {ext}")

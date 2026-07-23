@@ -37,10 +37,13 @@ def main(argv: list[str] | None = None) -> int:
     store = Store(config.db_file)
     lock = threading.Lock()
 
-    # 2. Reprise sur incident.
+    # 2. Reprise sur incident + rejeu des échecs récupérables.
     recovered = store.recover_stuck_jobs()
     if recovered:
         print(f"[reprise] {recovered} fichier(s) interrompu(s) remis en file.")
+    requeued = store.requeue_to_resolve(max(config.max_retries, 1))
+    if requeued:
+        print(f"[rejeu] {requeued} fichier(s) à résoudre réinjecté(s).")
 
     # Vérification du volume.
     ok, msg = verify_volume(config)
@@ -55,7 +58,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[scan] {n} fichier(s) enfilé(s).")
         while worker.run_once():
             pass
-        print(f"[terminé] {store.job_counts()}")
+        recon = store.reconciliation()
+        print(f"[terminé] couverture {recon['coverage_pct']}% — {recon['counts']}")
+        if recon["counts"].get("to_resolve"):
+            print(f"[à résoudre] motifs : {store.reasons_breakdown('to_resolve')}")
         return 0
 
     # 3. Balayage initial + surveillance continue.

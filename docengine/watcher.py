@@ -18,27 +18,40 @@ from .config import Config
 from .store import Store
 
 
-def _is_eligible(path: Path, extensions: set[str]) -> bool:
-    return path.is_file() and path.suffix.lower() in extensions
+def _depth_of(root: Path, path: Path) -> int:
+    try:
+        return len(path.relative_to(root).parts) - 1
+    except ValueError:
+        return len(path.parts) - 1
+
+
+def _enqueue_with_meta(store: Store, lock: threading.Lock, root: Path, path: Path) -> None:
+    """Enfile un fichier avec ses métadonnées (taille, profondeur, date)."""
+    try:
+        st = path.stat()
+        size, mtime = st.st_size, st.st_mtime
+    except OSError:
+        size, mtime = None, None
+    with lock:
+        store.enqueue(str(path), size=size, depth=_depth_of(root, path), mtime=mtime)
 
 
 def scan_existing(config: Config, store: Store, lock: threading.Lock) -> int:
-    """Enfile tous les fichiers éligibles déjà présents sur le volume.
+    """Enfile TOUS les fichiers présents sur le volume (le triage tranchera ensuite).
 
-    Renvoie le nombre de fichiers enfilés. Ignore silencieusement les dossiers
-    inaccessibles (permissions).
+    On enfile tout — même ce qu'on ne sait pas lire — pour garantir la couverture :
+    chaque fichier du disque aura une ligne dans le registre. Renvoie le nombre
+    enfilé. Ignore les dossiers inaccessibles (permissions) sans planter.
     """
     root = Path(config.watch_path)
     if not root.exists():
         return 0
 
-    extensions = config.normalized_extensions()
     count = 0
     for path in root.rglob("*"):
         try:
-            if _is_eligible(path, extensions):
-                with lock:
-                    store.enqueue(str(path))
+            if path.is_file():
+                _enqueue_with_meta(store, lock, root, path)
                 count += 1
         except (PermissionError, OSError):
             continue
@@ -66,14 +79,13 @@ class _EnqueueHandler:
         self.config = config
         self.store = store
         self.lock = lock
-        self.extensions = config.normalized_extensions()
+        self.root = Path(config.watch_path)
 
     def _maybe_enqueue(self, path_str: str) -> None:
         path = Path(path_str)
         try:
-            if _is_eligible(path, self.extensions):
-                with self.lock:
-                    self.store.enqueue(str(path))
+            if path.is_file():   # tout fichier : le triage classera ensuite
+                _enqueue_with_meta(self.store, self.lock, self.root, path)
         except (PermissionError, OSError):
             pass
 

@@ -19,8 +19,20 @@ poll_on_start: true
 # Extensions traitées (en minuscules, avec le point).
 extensions: [".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif", ".bmp", ".docx", ".xlsx", ".csv", ".txt", ".md"]
 
-# Nombre maximum de tentatives pour un fichier en erreur avant abandon.
+# Nombre maximum de tentatives de rejeu pour un fichier « à résoudre ».
 max_retries: 3
+
+# Découpage des gros fichiers : nombre de pages traitées par lot (OCR PDF).
+# Garde la machine légère même sur un rapport de 500 pages.
+batch_pages: 5
+
+# Garde-fou mémoire : au-delà, un fichier texte est lu partiellement (marqué tronqué).
+max_text_bytes: 52428800   # 50 Mo
+
+# Extraction universelle Apache Tika (1400+ formats). Nécessite Java installé.
+# Laisser à false pour rester léger (lecteurs Python natifs). Repli automatique.
+enable_tika: false
+tika_server: ""            # URL d'un tika-server déjà lancé (sinon Tika le démarre)
 
 # Emplacement de la base SQLite (relative au dossier du projet).
 db_path: "data/docs.db"

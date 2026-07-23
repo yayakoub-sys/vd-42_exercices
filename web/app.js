@@ -19,17 +19,48 @@ function fmtDate(ts) {
   return new Date(ts * 1000).toLocaleString("fr-FR");
 }
 
+const STATE_LABELS = {
+  done: "traités", classified: "classés", to_resolve: "à résoudre",
+  missing: "disparus", pending: "en attente", processing: "en cours",
+};
+
 // --- Statut global ---
 async function refreshStatus() {
   try {
     const s = await getJSON("/api/status");
-    const jobs = s.jobs || {};
-    const parts = Object.entries(jobs).map(([k, v]) => `${k}: ${v}`).join(" · ");
     $("#status").textContent =
-      `Volume : ${s.watch_path || "(non défini)"} — ${s.documents} document(s) consigné(s)` +
-      (parts ? ` — file [${parts}]` : "");
+      `Volume : ${s.watch_path || "(non défini)"} — ${s.documents} document(s) consigné(s)`;
   } catch (e) {
     $("#status").textContent = "Impossible de joindre le moteur : " + e.message;
+  }
+}
+
+// --- Couverture (finitude : total = somme des états) ---
+async function refreshCoverage() {
+  try {
+    const r = await getJSON("/api/reconciliation");
+    $("#covPct").textContent = `${r.coverage_pct}%`;
+    $("#covFill").style.width = `${r.coverage_pct}%`;
+    const counts = r.counts || {};
+    $("#covCounts").innerHTML = Object.entries(counts).map(([k, v]) =>
+      `<span class="chip ${k}">${esc(STATE_LABELS[k] || k)} : ${v}</span>`
+    ).join("") + `<span class="chip">total : ${r.total}</span>`;
+    const reasons = r.reasons_to_resolve || [];
+    $("#covReasons").innerHTML = reasons.length
+      ? "À résoudre — motifs : " + reasons.map((x) => `${esc(x.reason)} (${x.n})`).join(" · ")
+      : (r.covered ? "✅ Tout le disque est couvert : aucun fichier en attente." : "");
+  } catch (e) {
+    $("#covReasons").textContent = "Couverture indisponible : " + e.message;
+  }
+}
+
+async function requeue() {
+  try {
+    const r = await fetch("/api/requeue", { method: "POST" }).then((x) => x.json());
+    $("#covReasons").textContent = `${r.requeued} fichier(s) réinjecté(s) pour un nouvel essai.`;
+    refreshCoverage();
+  } catch (e) {
+    $("#covReasons").textContent = "Rejeu impossible : " + e.message;
   }
 }
 
@@ -119,7 +150,10 @@ $("#closeDetail").addEventListener("click", () => $("#detail").classList.add("hi
 document.querySelectorAll(".tab").forEach((t) =>
   t.addEventListener("click", () => showTab(t.dataset.tab)));
 
+$("#requeueBtn").addEventListener("click", requeue);
+
 // --- Démarrage ---
 refreshStatus();
+refreshCoverage();
 listAll();
-setInterval(refreshStatus, 5000);
+setInterval(() => { refreshStatus(); refreshCoverage(); }, 5000);

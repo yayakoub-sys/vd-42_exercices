@@ -31,6 +31,11 @@ class Config:
     templates_dir: str = "templates"
     host: str = "127.0.0.1"
     port: int = 8000
+    # Découpage / robustesse
+    batch_pages: int = 5                     # pages traitées par lot (OCR PDF)
+    max_text_bytes: int = 50 * 1024 * 1024   # garde-fou mémoire (gros fichiers texte)
+    enable_tika: bool = False                # extraction universelle Apache Tika (Java requis)
+    tika_server: str = ""                    # URL d'un tika-server déjà lancé (optionnel)
 
     @property
     def db_file(self) -> Path:
