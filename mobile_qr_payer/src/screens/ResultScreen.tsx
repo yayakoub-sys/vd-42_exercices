@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Alert, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, StyleSheet, View } from 'react-native';
+import { Button, Card, Chip, HelperText, Text } from 'react-native-paper';
 import { formatEmvcoAmount } from '../core/emvco';
 import { resolveProvider } from '../core/providers/registry';
 import type { ScannedQr } from '../core/providers/types';
@@ -34,18 +35,24 @@ export function ResultScreen({ qr, onRescan }: Props) {
   if (!provider) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>QR non reconnu</Text>
-        <Text style={styles.body}>
-          Je ne reconnais pas ce type de QR. Voici son contenu, tel que lu :
-        </Text>
-        <View style={styles.rawBox}>
-          <Text selectable style={styles.rawText}>
-            {qr.raw}
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.primaryButton} onPress={onRescan}>
-          <Text style={styles.primaryButtonText}>Scanner à nouveau</Text>
-        </TouchableOpacity>
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text variant="headlineSmall" style={styles.centerText}>
+              QR non reconnu
+            </Text>
+            <Text variant="bodyMedium" style={[styles.centerText, styles.muted]}>
+              Je ne reconnais pas ce type de QR. Voici son contenu, tel que lu :
+            </Text>
+            <View style={styles.rawBox}>
+              <Text selectable style={styles.rawText}>
+                {qr.raw}
+              </Text>
+            </View>
+          </Card.Content>
+        </Card>
+        <Button mode="contained" onPress={onRescan} style={styles.spacedButton}>
+          Scanner à nouveau
+        </Button>
       </View>
     );
   }
@@ -63,7 +70,7 @@ export function ResultScreen({ qr, onRescan }: Props) {
         await Linking.openURL(storeUrl);
       } else {
         Alert.alert(
-          'Impossible d\'ouvrir automatiquement',
+          "Impossible d'ouvrir automatiquement",
           `Ouvre toi-même l'appli ${providerLabel} pour terminer le paiement.`,
         );
       }
@@ -72,36 +79,66 @@ export function ResultScreen({ qr, onRescan }: Props) {
   }
 
   return (
-    <View style={[styles.container, { borderTopColor: provider.color, borderTopWidth: 8 }]}>
-      <Text style={[styles.title, { color: provider.color }]}>{provider.label}</Text>
-      {merchantName && <Text style={styles.merchant}>{merchantName}</Text>}
-      {amount && <Text style={styles.amount}>{amount}</Text>}
+    <View style={styles.container}>
+      <Card style={styles.card}>
+        <Card.Content style={styles.cardContent}>
+          <View style={styles.pillRow}>
+            <Chip style={{ backgroundColor: provider.color }} textStyle={styles.pillText}>
+              {provider.label}
+            </Chip>
+            {action.type === 'deeplink' && (
+              <Chip
+                compact
+                mode="outlined"
+                style={action.confidence === 'confirmed' ? styles.confirmedChip : styles.bestEffortChip}
+              >
+                {action.confidence === 'confirmed' ? 'Confirmé' : 'Best effort'}
+              </Chip>
+            )}
+          </View>
 
-      {action.type === 'deeplink' ? (
-        <>
-          {action.confidence === 'best_effort' && (
-            <Text style={styles.warning}>
-              ⚠️ L'ouverture automatique n'est pas encore garantie pour {provider.label} sur tous
-              les téléphones. Si rien ne s'ouvre, lance {provider.label} toi-même.
+          {merchantName && (
+            <Text variant="titleMedium" style={styles.centerText}>
+              {merchantName}
             </Text>
           )}
-          <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: provider.color }]}
-            onPress={handleOpenPress}
-            disabled={opening}
-          >
-            <Text style={styles.primaryButtonText}>
-              {opening ? 'Ouverture…' : `Ouvrir ${provider.label}`}
+          {amount && (
+            <Text variant="headlineSmall" style={styles.centerText}>
+              {amount}
             </Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <Text style={styles.body}>{action.reason}</Text>
+          )}
+
+          {action.type === 'deeplink' ? (
+            action.confidence === 'best_effort' && (
+              <HelperText type="info" visible style={styles.centerText}>
+                ⚠️ L'ouverture automatique n'est pas encore garantie pour {provider.label} sur
+                tous les téléphones. Si rien ne s'ouvre, lance {provider.label} toi-même.
+              </HelperText>
+            )
+          ) : (
+            <Text variant="bodyMedium" style={[styles.centerText, styles.muted]}>
+              {action.reason}
+            </Text>
+          )}
+        </Card.Content>
+      </Card>
+
+      {action.type === 'deeplink' && (
+        <Button
+          mode="contained"
+          onPress={handleOpenPress}
+          loading={opening}
+          disabled={opening}
+          style={styles.spacedButton}
+          buttonColor={provider.color}
+        >
+          {opening ? 'Ouverture…' : `Ouvrir ${provider.label}`}
+        </Button>
       )}
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={onRescan}>
-        <Text style={styles.secondaryButtonText}>Scanner à nouveau</Text>
-      </TouchableOpacity>
+      <Button mode="text" onPress={onRescan}>
+        Scanner à nouveau
+      </Button>
     </View>
   );
 }
@@ -109,26 +146,20 @@ export function ResultScreen({ qr, onRescan }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    padding: 20,
     justifyContent: 'center',
-    gap: 12,
+    gap: 14,
     backgroundColor: 'white',
   },
-  title: { fontSize: 28, fontWeight: '700', textAlign: 'center' },
-  merchant: { fontSize: 18, textAlign: 'center', color: '#374151' },
-  amount: { fontSize: 22, fontWeight: '600', textAlign: 'center' },
-  body: { fontSize: 15, textAlign: 'center', color: '#374151' },
-  warning: { fontSize: 13, textAlign: 'center', color: '#92400E' },
+  card: { borderRadius: 16 },
+  cardContent: { gap: 10, paddingVertical: 8 },
+  pillRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, flexWrap: 'wrap' },
+  pillText: { color: 'white', fontWeight: '700' },
+  confirmedChip: { backgroundColor: '#DCFCE7' },
+  bestEffortChip: { backgroundColor: '#FEF3C7' },
+  centerText: { textAlign: 'center' },
+  muted: { color: '#6B7280' },
   rawBox: { backgroundColor: '#F3F4F6', borderRadius: 8, padding: 12 },
   rawText: { fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }), fontSize: 12 },
-  primaryButton: {
-    backgroundColor: '#111827',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  primaryButtonText: { color: 'white', fontSize: 17, fontWeight: '600' },
-  secondaryButton: { paddingVertical: 14, alignItems: 'center' },
-  secondaryButtonText: { color: '#6B7280', fontSize: 15 },
+  spacedButton: { marginTop: 4 },
 });

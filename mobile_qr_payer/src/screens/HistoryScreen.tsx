@@ -1,4 +1,5 @@
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { Button, Divider, List, Text } from 'react-native-paper';
 import type { ScanHistoryEntry } from '../core/history';
 
 interface Props {
@@ -16,43 +17,52 @@ function formatWhen(timestamp: number): string {
   });
 }
 
+function describe(entry: ScanHistoryEntry): string | undefined {
+  const parts = [entry.merchantName, entry.amount].filter(Boolean);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
 export function HistoryScreen({ entries, onBack, onClear }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.backLink}>‹ Retour</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Historique</Text>
-        <View style={{ width: 60 }} />
+        <Button mode="text" onPress={onBack} compact contentStyle={styles.backButtonContent}>
+          ‹ Retour
+        </Button>
+        <Text variant="titleMedium">Historique</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {entries.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Aucun QR scanné pour l'instant.</Text>
+          <Text variant="bodyMedium" style={styles.muted}>
+            Aucun QR scanné pour l'instant.
+          </Text>
         </View>
       ) : (
         <FlatList
           data={entries}
           keyExtractor={(item) => item.id}
+          ItemSeparatorComponent={Divider}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.row}>
-              <View style={styles.rowTop}>
-                <Text style={styles.provider}>{item.providerLabel}</Text>
-                <Text style={styles.when}>{formatWhen(item.timestamp)}</Text>
-              </View>
-              {item.merchantName && <Text style={styles.merchant}>{item.merchantName}</Text>}
-              {item.amount && <Text style={styles.amount}>{item.amount}</Text>}
-            </View>
+            <List.Item
+              title={item.providerLabel}
+              description={describe(item)}
+              right={() => (
+                <Text variant="bodySmall" style={styles.muted}>
+                  {formatWhen(item.timestamp)}
+                </Text>
+              )}
+            />
           )}
         />
       )}
 
       {entries.length > 0 && (
-        <TouchableOpacity style={styles.clearButton} onPress={onClear}>
-          <Text style={styles.clearButtonText}>Effacer l'historique</Text>
-        </TouchableOpacity>
+        <Button mode="text" onPress={onClear} textColor="#DC2626" style={styles.clearButton}>
+          Effacer l'historique
+        </Button>
       )}
     </View>
   );
@@ -64,26 +74,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 12,
+    paddingHorizontal: 8,
+    paddingTop: 48,
+    paddingBottom: 4,
   },
-  backLink: { fontSize: 16, color: '#111827', width: 60 },
-  title: { fontSize: 17, fontWeight: '700' },
+  backButtonContent: { paddingHorizontal: 4 },
+  headerSpacer: { width: 60 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#6B7280', fontSize: 15 },
-  list: { paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
-  row: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 14,
-    gap: 4,
-  },
-  rowTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  provider: { fontWeight: '700', fontSize: 15 },
-  when: { color: '#6B7280', fontSize: 13 },
-  merchant: { fontSize: 14, color: '#374151' },
-  amount: { fontSize: 15, fontWeight: '600' },
-  clearButton: { paddingVertical: 14, alignItems: 'center' },
-  clearButtonText: { color: '#DC2626', fontSize: 15 },
+  muted: { color: '#6B7280' },
+  list: { paddingBottom: 24 },
+  clearButton: { marginBottom: 8 },
 });

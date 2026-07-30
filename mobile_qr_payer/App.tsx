@@ -1,6 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ScannerScreen } from './src/screens/ScannerScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -9,6 +11,7 @@ import type { ScannedQr } from './src/core/providers/types';
 import type { ScanHistoryEntry } from './src/core/history';
 import { buildHistoryEntry } from './src/core/history';
 import { addHistoryEntry, clearHistory, getHistory, hasSeenOnboarding, markOnboardingSeen } from './src/storage/appState';
+import { theme } from './src/ui/theme';
 
 type View_ = 'loading' | 'onboarding' | 'scanner' | 'result' | 'history';
 
@@ -46,19 +49,23 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      {view === 'onboarding' && <OnboardingScreen onDone={handleOnboardingDone} />}
-      {view === 'scanner' && (
-        <ScannerScreen onScanned={handleScanned} onOpenHistory={() => setView('history')} />
-      )}
-      {view === 'result' && scanned && (
-        <ResultScreen qr={scanned} onRescan={() => setView('scanner')} />
-      )}
-      {view === 'history' && (
-        <HistoryScreen entries={history} onBack={() => setView('scanner')} onClear={handleClearHistory} />
-      )}
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <View style={styles.container}>
+          {view === 'onboarding' && <OnboardingScreen onDone={handleOnboardingDone} />}
+          {view === 'scanner' && (
+            <ScannerScreen onScanned={handleScanned} onOpenHistory={() => setView('history')} />
+          )}
+          {view === 'result' && scanned && (
+            <ResultScreen qr={scanned} onRescan={() => setView('scanner')} />
+          )}
+          {view === 'history' && (
+            <HistoryScreen entries={history} onBack={() => setView('scanner')} onClear={handleClearHistory} />
+          )}
+          <StatusBar style="auto" />
+        </View>
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
 

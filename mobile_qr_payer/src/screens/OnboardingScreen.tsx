@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Button, Text } from 'react-native-paper';
 
 interface Props {
   onDone: () => void;
@@ -9,19 +10,23 @@ export function OnboardingScreen({ onDone }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.body}>
-        <Text style={styles.emoji}>◱</Text>
-        <Text style={styles.title}>Un seul geste pour payer</Text>
-        <Text style={styles.paragraph}>
+        <Text variant="displaySmall" style={styles.glyph}>
+          ◱
+        </Text>
+        <Text variant="headlineMedium" style={styles.title}>
+          Un seul geste pour payer
+        </Text>
+        <Text variant="bodyLarge" style={styles.paragraph}>
           Vise n'importe quel QR de paiement (Wave, Orange Money...). L'appli reconnaît
           tout de suite à qui il appartient et ouvre directement la bonne appli pour toi.
         </Text>
-        <Text style={styles.paragraph}>
+        <Text variant="bodyLarge" style={styles.paragraph}>
           Tu n'as plus besoin de chercher quelle appli ouvrir : tu scannes, elle s'ouvre.
         </Text>
       </View>
-      <TouchableOpacity style={styles.primaryButton} onPress={onDone}>
-        <Text style={styles.primaryButtonText}>Commencer</Text>
-      </TouchableOpacity>
+      <Button mode="contained" onPress={onDone} contentStyle={styles.buttonContent}>
+        Commencer
+      </Button>
     </View>
   );
 }
@@ -39,14 +44,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
-  emoji: { fontSize: 48, color: '#111827' },
-  title: { fontSize: 26, fontWeight: '700', textAlign: 'center' },
-  paragraph: { fontSize: 16, textAlign: 'center', color: '#374151', lineHeight: 22 },
-  primaryButton: {
-    backgroundColor: '#111827',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  primaryButtonText: { color: 'white', fontSize: 17, fontWeight: '600' },
+  glyph: { color: '#2A1B54' },
+  title: { textAlign: 'center', fontWeight: '700' },
+  paragraph: { textAlign: 'center', color: '#374151' },
+  buttonContent: { paddingVertical: 6 },
 });

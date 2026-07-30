@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import type { BarcodeScanningResult } from 'expo-camera';
 
 interface Props {
@@ -24,7 +25,9 @@ export function ScannerScreen({ onScanned, onOpenHistory }: Props) {
         <Text style={styles.message}>
           Pour scanner les QR codes de paiement, l'appli a besoin de la caméra.
         </Text>
-        <Button title="Autoriser la caméra" onPress={requestPermission} />
+        <Button mode="contained" onPress={requestPermission}>
+          Autoriser la caméra
+        </Button>
       </View>
     );
   }
@@ -48,9 +51,14 @@ export function ScannerScreen({ onScanned, onOpenHistory }: Props) {
         <Text style={styles.hint} pointerEvents="none">
           Vise un QR code de paiement
         </Text>
-        <TouchableOpacity style={styles.historyButton} onPress={onOpenHistory}>
-          <Text style={styles.historyButtonText}>Historique</Text>
-        </TouchableOpacity>
+        <Button
+          mode="contained-tonal"
+          onPress={onOpenHistory}
+          style={styles.historyButton}
+          compact
+        >
+          Historique
+        </Button>
       </View>
     </View>
   );
@@ -91,10 +99,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 56,
     right: 20,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
   },
-  historyButtonText: { color: 'white', fontSize: 14, fontWeight: '600' },
 });

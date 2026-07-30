@@ -21,6 +21,9 @@ paiement avec ton code secret habituel.
   sur le téléphone, rien n'est envoyé ailleurs.
 - Une icône et des couleurs propres à l'appli (plus les images par défaut du modèle
   de départ).
+- Les boutons, cartes et listes viennent maintenant d'une boîte à outils gratuite et
+  open source très utilisée (React Native Paper — Material Design), plutôt que d'être
+  redessinés à la main : plus propre, et plus rapide à faire évoluer plus tard.
 
 ## Ce qui est "best effort" — pas encore confirmé sur un vrai téléphone
 
