@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Lecteur Paiement CI",
+    "name": "EasyPay",
     "slug": "mobile_qr_payer",
     "version": "1.0.0",
     "orientation": "portrait",

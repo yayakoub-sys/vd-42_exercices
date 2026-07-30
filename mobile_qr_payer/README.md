@@ -1,4 +1,4 @@
-# Lecteur Paiement CI — v0 / MVP
+# EasyPay — v0 / MVP
 
 Une appli mobile qui s'ouvre directement sur un lecteur de QR code. Elle scanne un QR
 de paiement, reconnaît tout de suite à quel opérateur il appartient (Wave, Orange
@@ -56,8 +56,6 @@ Pas besoin d'installer de logiciel compliqué :
   prévu, voir `src/core/providers/futureAggregatorProvider.example.ts` — ça demande un
   accord commercial avec un agrégateur qui a les API de prélèvement, pas du code
   supplémentaire compliqué de notre côté.
-- Ajuster le nom affiché de l'appli si tu en veux un autre (aujourd'hui : "Lecteur
-  Paiement CI", facile à changer dans `app.json`).
 
 ## Pour comprendre le code (repères techniques)
 
