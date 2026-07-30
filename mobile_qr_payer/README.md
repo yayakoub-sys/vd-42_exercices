@@ -8,12 +8,19 @@ paiement avec ton code secret habituel.
 ## Ce qui marche déjà (testé)
 
 - Le "cerveau" qui lit et reconnaît les QR codes (fichiers dans `src/core/`) est testé
-  automatiquement : 18 tests, tous verts. Pour les relancer : `npm test`.
+  automatiquement : 22 tests, tous verts. Pour les relancer : `npm test`.
 - **Wave** : reconnaissance et ouverture confirmées. Un QR Wave contient directement
   un lien officiel (`pay.wave.com/...`) ; l'appli l'ouvre tel quel.
 - Le format des QR **Orange Money** (et de beaucoup d'autres) suit un standard ouvert
   et documenté (EMVCo) : l'appli sait le lire, en extraire le montant, le nom du
   commerçant, etc.
+- Un écran d'accueil explique l'appli une seule fois, au tout premier lancement
+  (ensuite elle s'ouvre directement sur le lecteur, comme demandé).
+- Un **historique** garde tes 20 derniers QR scannés (opérateur, marchand, montant,
+  heure) — accessible via le bouton "Historique" en haut de l'écran caméra. Il reste
+  sur le téléphone, rien n'est envoyé ailleurs.
+- Une icône et des couleurs propres à l'appli (plus les images par défaut du modèle
+  de départ).
 
 ## Ce qui est "best effort" — pas encore confirmé sur un vrai téléphone
 
@@ -46,8 +53,8 @@ Pas besoin d'installer de logiciel compliqué :
   prévu, voir `src/core/providers/futureAggregatorProvider.example.ts` — ça demande un
   accord commercial avec un agrégateur qui a les API de prélèvement, pas du code
   supplémentaire compliqué de notre côté.
-- Donner un nom et une icône définitifs à l'appli (aujourd'hui : "Lecteur Paiement CI",
-  facile à changer dans `app.json`).
+- Ajuster le nom affiché de l'appli si tu en veux un autre (aujourd'hui : "Lecteur
+  Paiement CI", facile à changer dans `app.json`).
 
 ## Pour comprendre le code (repères techniques)
 
@@ -56,5 +63,9 @@ Pas besoin d'installer de logiciel compliqué :
   plus `registry.ts` qui décide lequel reconnaît le QR scanné. Pour ajouter un
   nouvel opérateur demain, il suffit d'ajouter un fichier ici et de l'inscrire dans
   `registry.ts` — rien d'autre à toucher.
-- `src/screens/` : l'écran caméra (`ScannerScreen.tsx`) et l'écran de résultat
-  (`ResultScreen.tsx`).
+- `src/screens/` : accueil (`OnboardingScreen.tsx`), caméra (`ScannerScreen.tsx`),
+  résultat (`ResultScreen.tsx`), historique (`HistoryScreen.tsx`).
+- `src/storage/appState.ts` : mémorise sur le téléphone "l'accueil a déjà été vu" et
+  la liste des derniers scans.
+- `assets/` : icône et couleurs de l'appli, générées avec un petit script (pas de
+  fichier externe utilisé).

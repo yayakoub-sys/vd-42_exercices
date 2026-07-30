@@ -1,13 +1,14 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { BarcodeScanningResult } from 'expo-camera';
 
 interface Props {
   onScanned: (rawData: string) => void;
+  onOpenHistory: () => void;
 }
 
-export function ScannerScreen({ onScanned }: Props) {
+export function ScannerScreen({ onScanned, onOpenHistory }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   // Empêche de traiter 10 fois le même QR pendant la fraction de seconde
   // où la caméra continue de le voir après le premier scan.
@@ -42,9 +43,14 @@ export function ScannerScreen({ onScanned }: Props) {
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={handleBarcodeScanned}
       />
-      <View style={styles.overlay} pointerEvents="none">
-        <View style={styles.frame} />
-        <Text style={styles.hint}>Vise un QR code de paiement</Text>
+      <View style={styles.overlay} pointerEvents="box-none">
+        <View style={styles.frame} pointerEvents="none" />
+        <Text style={styles.hint} pointerEvents="none">
+          Vise un QR code de paiement
+        </Text>
+        <TouchableOpacity style={styles.historyButton} onPress={onOpenHistory}>
+          <Text style={styles.historyButtonText}>Historique</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -81,4 +87,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
   },
+  historyButton: {
+    position: 'absolute',
+    top: 56,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  historyButtonText: { color: 'white', fontSize: 14, fontWeight: '600' },
 });
