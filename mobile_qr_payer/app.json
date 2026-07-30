@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Lecteur Paiement CI",
+    "slug": "mobile_qr_payer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "La caméra sert uniquement à lire les QR codes de paiement, aucune photo n'est enregistrée."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "La caméra sert uniquement à lire les QR codes de paiement, aucune photo n'est enregistrée.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ]
+  }
+}
