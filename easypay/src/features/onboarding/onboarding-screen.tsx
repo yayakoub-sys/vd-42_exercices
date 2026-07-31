@@ -20,34 +20,30 @@ export function OnboardingScreen() {
       <View className="w-full flex-1">
         <Cover />
       </View>
-      <View className="justify-end">
+      <View className="justify-end px-6">
         <Text className="my-3 text-center text-5xl font-bold">
-          Obytes Starter
+          EasyPay
         </Text>
         <Text className="mb-2 text-center text-lg text-gray-600">
-          The right way to build your mobile app
+          Un seul geste pour payer
         </Text>
 
         <Text className="my-1 pt-6 text-left text-lg">
-          🚀 Production-ready
-          {' '}
+          Vise n'importe quel QR de paiement (Wave, Orange Money...).
         </Text>
         <Text className="my-1 text-left text-lg">
-          🥷 Developer experience + Productivity
+          EasyPay reconnaît tout de suite à qui il appartient.
         </Text>
         <Text className="my-1 text-left text-lg">
-          🧩 Minimal code and dependencies
-        </Text>
-        <Text className="my-1 text-left text-lg">
-          💪 well maintained third-party libraries
+          Et ouvre directement la bonne appli pour toi.
         </Text>
       </View>
       <SafeAreaView className="mt-6">
         <Button
-          label="Let's Get Started "
+          label="Commencer"
           onPress={() => {
             setIsFirstTime(false);
-            router.replace('/login');
+            router.replace('/(app)');
           }}
         />
       </SafeAreaView>

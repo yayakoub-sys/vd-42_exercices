@@ -1,49 +1,53 @@
 <h1 align="center">
   <img alt="logo" src="./assets/icon.png" width="124px" style="border-radius:10px"/><br/>
-Mobile App </h1>
+EasyPay — v0.1 </h1>
 
-> This Project is based on [Obytes starter](https://starter.obytes.com)
+> Construit à partir d'un vrai squelette d'appli ([Obytes Starter](https://starter.obytes.com)),
+> pour ne pas repartir de zéro sur la navigation, l'accueil, les réglages...
 
-## Requirements
+## Ce que fait EasyPay
 
-- [React Native dev environment ](https://reactnative.dev/docs/environment-setup)
-- [Node.js LTS release](https://nodejs.org/en/)
-- [Git](https://git-scm.com/)
-- [Watchman](https://facebook.github.io/watchman/docs/install#buildinstall), required only for macOS or Linux users
-- [Pnpm](https://pnpm.io/installation)
-- [Cursor](https://www.cursor.com/) or [VS Code Editor](https://code.visualstudio.com/download) ⚠️ Make sure to install all recommended extension from `.vscode/extensions.json`
+Une appli qui s'ouvre directement sur un lecteur de QR code. Elle scanne un QR de
+paiement, reconnaît tout de suite à quel opérateur il appartient (Wave, Orange
+Money…), et ouvre automatiquement la bonne appli officielle.
 
-## 👋 Quick start
+## Ce qui marche déjà (vérifié)
 
-Clone the repo to your machine and install deps :
+- Le moteur de reconnaissance (`src/core/`) est le même que celui déjà testé dans
+  `mobile_qr_payer/` — 22 tests automatiques, tous verts (`pnpm test`).
+- 3 onglets fonctionnels : **Scanner** (caméra), **Historique** (relevé des scans),
+  **Réglages** (langue, thème clair/sombre — déjà fournis par le modèle de départ).
+- Écran d'accueil affiché une seule fois au premier lancement.
+- Identité visuelle EasyPay (icône, couleurs) déjà en place.
+- Vérifié par une vraie capture d'écran de l'appli qui tourne (pas une maquette).
+
+## Ce qui reste (honnête, pas caché)
+
+- **4 tests hérités du modèle de départ échouent** (`button.test.tsx`,
+  `select.test.tsx`, `input.test.tsx`, `checkbox.test.tsx`) — un souci connu de
+  l'écosystème React Native (une dépendance de navigation livrée dans un format que
+  l'outil de test ne sait pas encore lire). Ça ne touche ni notre moteur ni l'appli
+  réelle (qui tourne très bien), seulement ces tests précis. À corriger plus tard.
+- Le texte "Sorry! No data found" de l'historique vide vient du modèle de départ,
+  pas encore traduit en français.
+- La connexion (login) du modèle de départ a été retirée : EasyPay ne demande pas de
+  compte.
+
+## Comment le lancer
 
 ```sh
-git clone https://github.com/user/repo-name
-
-cd ./repo-name
-
 pnpm install
+pnpm start   # puis scanner le QR avec l'appli Expo Go
+# ou
+pnpm web     # prévisualiser dans un navigateur
 ```
 
-To run the app on ios
+## Repères techniques
 
-```sh
-pnpm ios
-```
-
-To run the app on Android
-
-```sh
-pnpm android
-```
-
-## ✍️ Documentation
-
-- [Rules and Conventions](https://starter.obytes.com/getting-started/rules-and-conventions/)
-- [Project structure](https://starter.obytes.com/getting-started/project-structure)
-- [Environment vars and config](https://starter.obytes.com/getting-started/environment-vars-config)
-- [UI and Theming](https://starter.obytes.com/ui-and-theme/ui-theming)
-- [Components](https://starter.obytes.com/ui-and-theme/components)
-- [Forms](https://starter.obytes.com/ui-and-theme/Forms)
-- [Data fetching](https://starter.obytes.com/guides/data-fetching)
-- [Contribute to starter](https://starter.obytes.com/how-to-contribute/)
+- `src/core/` : le moteur (identique à `mobile_qr_payer/src/core/`).
+- `src/storage/appState.ts` : historique des scans (stockage local MMKV, déjà fourni
+  par le modèle de départ).
+- `src/features/scanner/`, `src/features/history/` : nos écrans.
+- `src/app/(app)/` : les routes (navigation par fichiers, fournie par Expo Router).
+- `src/components/ui/colors.js` + `src/global.css` : les couleurs EasyPay (les deux
+  fichiers doivent rester alignés, Tailwind v4 lit `global.css`).

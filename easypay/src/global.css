@@ -37,17 +37,21 @@
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
 
-  /* Primary palette */
-  --color-primary-50: #FFE2CC;
-  --color-primary-100: #FFC499;
-  --color-primary-200: #FFA766;
-  --color-primary-300: #FF984C;
-  --color-primary-400: #FF8933;
-  --color-primary-500: #FF7B1A;
-  --color-primary-600: #FF6C00;
-  --color-primary-700: #E56100;
-  --color-primary-800: #CC5600;
-  --color-primary-900: #B24C00;
+  /* Primary palette — bleu nuit/violet EasyPay (voir assets/icon.png) */
+  --color-primary-50: #F1EEFC;
+  --color-primary-100: #E1D9F8;
+  --color-primary-200: #C3B3F0;
+  --color-primary-300: #A48DE8;
+  --color-primary-400: #8567DD;
+  --color-primary-500: #6C4FCB;
+  --color-primary-600: #55399F;
+  --color-primary-700: #3F2B78;
+  --color-primary-800: #2A1B54;
+  --color-primary-900: #1B1036;
+
+  /* Or — accent EasyPay */
+  --color-gold-500: #F5B942;
+  --color-gold-600: #C98A1F;
 
   /* Success palette */
   --color-success-50: #F0FDF4;

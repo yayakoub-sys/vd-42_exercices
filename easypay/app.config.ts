@@ -8,8 +8,10 @@ import 'tsx/cjs';
 // eslint-disable-next-line perfectionist/sort-imports
 import Env from './env';
 
-const EXPO_ACCOUNT_OWNER = 'obytes';
-const EAS_PROJECT_ID = 'c3e1075b-6fe7-4686-aa49-35b46a229044';
+// Ces deux valeurs viendront d'un vrai compte Expo créé pour EasyPay
+// (celles du modèle de départ ont été retirées : ce ne sont pas les nôtres).
+const EXPO_ACCOUNT_OWNER = undefined;
+const EAS_PROJECT_ID = '';
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.EXPO_PUBLIC_APP_ENV !== 'production',
@@ -33,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   description: `${Env.EXPO_PUBLIC_NAME} Mobile App`,
   owner: EXPO_ACCOUNT_OWNER,
   scheme: Env.EXPO_PUBLIC_SCHEME,
-  slug: 'obytesapp',
+  slug: 'easypay',
   version: Env.EXPO_PUBLIC_VERSION.toString(),
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -48,6 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: Env.EXPO_PUBLIC_BUNDLE_ID,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      NSCameraUsageDescription:
+        "La caméra sert uniquement à lire les QR codes de paiement, aucune photo n'est enregistrée.",
     },
   },
   experiments: {
@@ -56,7 +60,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#2E3C4B',
+      backgroundColor: '#1B1036',
     },
     package: Env.EXPO_PUBLIC_PACKAGE,
   },
@@ -68,7 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#2E3C4B',
+        backgroundColor: '#1B1036',
         image: './assets/splash-icon.png',
         imageWidth: 150,
       },
@@ -113,6 +117,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-localization',
     'expo-router',
+    [
+      'expo-camera',
+      {
+        cameraPermission:
+          "La caméra sert uniquement à lire les QR codes de paiement, aucune photo n'est enregistrée.",
+        recordAudioAndroid: false,
+      },
+    ],
     ['app-icon-badge', appIconBadgeConfig],
     ['react-native-edge-to-edge'],
   ],
