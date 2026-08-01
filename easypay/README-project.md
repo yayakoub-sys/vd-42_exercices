@@ -42,9 +42,11 @@ dépôt pour le détail).
   l'écosystème React Native (une dépendance de navigation livrée dans un format que
   l'outil de test ne sait pas encore lire). Sans effet sur notre moteur ni sur l'appli
   réelle.
-- Le code secret (PIN) est stocké en clair dans le stockage local pour l'instant — noté
-  explicitement dans `src/storage/authState.ts`. À sécuriser (`expo-secure-store`)
-  avant toute vraie mise en production.
+- Le code secret (PIN) n'est plus stocké en clair : depuis le 1er août 2026, seule une
+  empreinte (SHA-256, avec un sel propre à l'appareil) est gardée dans
+  `src/storage/authState.ts` — vérifié en relisant le stockage après création du code,
+  aucune trace du code en clair. Reste à faire un jour : déplacer cette empreinte dans un
+  vrai coffre système (`expo-secure-store`) plutôt que le stockage local classique.
 - Le texte "Sorry! No data found" (historique vide) et quelques infobulles viennent du
   modèle de départ, pas encore traduits en français.
 - Jamais testé sur un vrai téléphone (seulement en navigateur, avec caméra factice).

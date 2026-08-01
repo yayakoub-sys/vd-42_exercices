@@ -47,8 +47,9 @@ vision du produit.
    est une étape commerciale, pas seulement technique.
 2. Le vrai test sur téléphone (bloqué depuis cet atelier cloud : demande un
    ordinateur + Wi-Fi).
-3. Sécuriser le code secret (actuellement stocké en clair en local, prévu pour
-   une démo — noté explicitement dans le code).
+3. ~~Sécuriser le code secret~~ — fait le 1er août 2026 : il n'est plus jamais stocké
+   en clair (empreinte SHA-256 + sel). Reste, un jour, à le loger dans un vrai coffre
+   système (`expo-secure-store`) plutôt que le stockage local classique.
 4. Confirmer la reconnaissance Orange Money avec un vrai QR ; ajouter MTN
    Money / Moov Money.
 5. Décider de la suite pour `mobile_qr_payer/` (garder comme référence ou
