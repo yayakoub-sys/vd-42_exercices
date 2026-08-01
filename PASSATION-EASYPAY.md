@@ -1,72 +1,82 @@
-# EasyPay — guide de passation (état au 31 juillet 2026)
+# EasyPay — guide de passation (état au 1er août 2026)
 
-Ce fichier est le point d'entrée unique pour reprendre le projet **EasyPay**
-(le lecteur de QR de paiement universel). Il ne concerne pas `docengine/` —
-c'est un projet à part qui vit dans ce même dépôt, sur la branche
-`claude/universal-qr-code-reader-4cdw9s`.
+Ce fichier est le point d'entrée unique pour reprendre le projet **EasyPay**.
+Il ne concerne pas `docengine/` — c'est un projet à part qui vit dans ce même
+dépôt, sur la branche `claude/universal-qr-code-reader-4cdw9s`.
 
 ## En une phrase
 
-Une appli mobile qui scanne n'importe quel QR de paiement mobile money
-(Wave, Orange Money…), reconnaît automatiquement à qui il appartient, et
-ouvre directement la bonne appli pour terminer le paiement — sans jamais
-demander à l'utilisateur laquelle choisir.
+Un portefeuille de paiement universel. On lie ses portefeuilles mobile money
+(Wave, Orange Money, Push by PalmPay, Djamo...), on scanne n'importe quel QR
+marchand, et on choisit soi-même avec quel portefeuille on paie — peu importe
+l'opérateur du QR scanné. EasyPay orchestre le paiement et prélève une petite
+commission ; il ne détient jamais l'argent (statut visé : "Service
+d'Initiation de Paiement", catégorie créée par la BCEAO en janvier 2024 — pas
+une hypothèse, 9 entreprises sont déjà agréées en Côte d'Ivoire sous ce cadre,
+dont Djamo).
 
-## Il existe deux dossiers, volontairement
+## Historique du projet (pourquoi deux dossiers existent)
 
 | Dossier | Ce que c'est | État |
 |---|---|---|
-| `mobile_qr_payer/` | **v0** — le premier prototype, construit à la main (React Native Paper) | Complet, testé (22 tests), jamais éprouvé sur un vrai téléphone |
-| `easypay/` | **v0.1** — le même moteur, réimplanté dans un vrai squelette d'appli gratuit et open source ([Obytes Starter](https://starter.obytes.com)) : navigation, réglages, thème clair/sombre déjà fournis | Complet, testé (22 tests), jamais éprouvé sur un vrai téléphone |
+| `mobile_qr_payer/` | **V0/V1** — premier prototype : lit un QR, ouvre l'appli correspondante. Construit à la main. | Complet, testé, dépassé par la V2 |
+| `easypay/` | **V2 (actuelle)** — le vrai produit : portefeuille universel avec identité vérifiée, plusieurs wallets liés, choix de la source de paiement, historique, commission visible. 47 écrans. | Complet, testé de bout en bout, jamais éprouvé sur un vrai téléphone |
 
-**Recommandation** : partir de `easypay/` pour la suite (plus solide, plus
-simple à faire évoluer). `mobile_qr_payer/` est gardé pour l'instant comme
-filet de sécurité, le temps de valider `easypay/` sur un vrai téléphone —
-à supprimer ensuite pour ne pas maintenir deux projets en parallèle.
+**Recommandation** : `easypay/` est la version à faire avancer. `mobile_qr_payer/`
+peut être supprimé dès que quelqu'un le confirme — il ne représente plus la
+vision du produit.
 
 ## Ce qui marche, vérifié
 
-- Le moteur de reconnaissance (`src/core/` dans chaque dossier, identique
-  dans les deux) : lecture du format standard EMVCo, reconnaissance Wave
-  (confirmée — les QR Wave contiennent un vrai lien officiel), reconnaissance
-  Orange Money par heuristique (nom du marchand), 22 tests automatiques verts.
-- Écran d'accueil (une seule fois), lecteur caméra, écran de résultat,
-  historique local des scans, réglages (langue, thème).
-- Identité visuelle propre (icône bleu nuit + or, voir `mobile_qr_payer/assets/icon.png`).
-- Vérifié par captures d'écran de l'appli qui tourne réellement (navigateur,
-  caméra factice) — jamais encore sur un vrai téléphone avec un vrai QR.
+- Le moteur de reconnaissance des QR (Wave confirmé, Orange Money par heuristique
+  EMVCo) : 18 tests automatiques verts.
+- **47 écrans construits et reliés entre eux**, en 6 parcours : démarrage &
+  identité, portefeuilles, scanner & payer, historique, compte, réglages.
+- Un vrai parcours automatisé de bout en bout a été rejoué (25 captures
+  d'écran réelles) : inscription complète → identité vérifiée → ajout d'un
+  portefeuille Wave → scan d'un QR marchand → paiement avec ce portefeuille,
+  commission affichée clairement → confirmation → retour à l'accueil.
+- Le moteur qui orchestre le paiement (débiter/créditer) est **simulé, mais
+  honnêtement documenté comme tel** dans le code, avec l'endroit précis où
+  brancher un vrai fournisseur plus tard sans toucher aux écrans.
 
-## Ce qui reste (voir aussi les README de chaque dossier)
+## Ce qui reste
 
-1. Le vrai test sur téléphone (bloqué : demande un ordinateur + Wi-Fi, pas
-   accessible depuis cet atelier cloud).
-2. Confirmer la reconnaissance Orange Money avec un vrai QR.
-3. Ajouter MTN Money / Moov Money quand on a un exemple réel de chacun.
-4. Choisir entre `mobile_qr_payer/` et `easypay/` et supprimer l'autre.
-5. Le vrai débit automatique (au lieu d'ouvrir l'appli officielle) demande un
-   accord commercial avec un agrégateur agréé BCEAO — pas du code.
+1. **Aucun vrai débit d'argent** — c'est simulé. Brancher un vrai fournisseur
+   (agrégateur agréé, ou accords un par un avec Wave/Orange Money/Djamo...)
+   est une étape commerciale, pas seulement technique.
+2. Le vrai test sur téléphone (bloqué depuis cet atelier cloud : demande un
+   ordinateur + Wi-Fi).
+3. Sécuriser le code secret (actuellement stocké en clair en local, prévu pour
+   une démo — noté explicitement dans le code).
+4. Confirmer la reconnaissance Orange Money avec un vrai QR ; ajouter MTN
+   Money / Moov Money.
+5. Décider de la suite pour `mobile_qr_payer/` (garder comme référence ou
+   supprimer).
 
-## Comment lancer chaque version
+## Comment lancer
 
 ```sh
-# v0
-cd mobile_qr_payer && npm install && npm start
-
-# v0.1 (recommandé)
 cd easypay && pnpm install && pnpm start
 ```
 
-Puis scanner le QR affiché dans le terminal avec l'appli **Expo Go**
-(gratuite, Play Store/App Store).
+Puis scanner le QR affiché dans le terminal avec l'appli **Expo Go** (gratuite,
+Play Store/App Store).
 
 ## Historique des décisions importantes
 
-- QR codes de paiement testés sans dispositif spécial : le format Wave est
-  une simple URL (`pay.wave.com/...`), le format Orange Money suit le
-  standard ouvert EMVCo — vérifié par recherche, pas supposé.
-- Un débit automatique direct (sans passer par l'appli officielle de
-  l'opérateur) est impossible sans agrément BCEAO d'agrégateur de paiement —
-  vérifié, ce n'est pas un choix technique.
-- `react-native-paper` puis un squelette d'appli complet (Obytes Starter)
-  ont été adoptés à la demande explicite de partir de briques déjà faites
-  plutôt que de tout redessiner à la main.
+- QR Wave = une simple URL (`pay.wave.com/...`) ; QR Orange Money = standard
+  ouvert EMVCo — vérifié par recherche, pas supposé.
+- Le mécanisme "je paie avec le wallet de mon choix, peu importe le QR scanné"
+  correspond à une vraie catégorie réglementaire de la BCEAO ("Service
+  d'Initiation de Paiement", instruction n°001-01-2024) — EasyPay ne détient
+  jamais l'argent, il le fait juste transiter, contre une petite commission.
+  Vérifié via BCEAO et la liste officielle des établissements de paiement
+  agréés en Côte d'Ivoire (Djamo, CinetPay, Julaya... y figurent déjà).
+- `react-native-paper` puis un squelette d'appli complet (Obytes Starter) ont
+  été adoptés pour partir de briques déjà faites plutôt que tout redessiner à
+  la main.
+- La V2 (portefeuille universel à 47 écrans) remplace la V0/V1 (simple lecteur
+  qui redirige) suite à une clarification du besoin réel : l'utilisateur veut
+  choisir sa source de paiement, pas juste être redirigé vers l'appli du QR
+  scanné.
