@@ -9,9 +9,9 @@ import {
   View,
 } from '@/components/ui';
 import { useIsFirstTime } from '@/lib/hooks';
-import { Cover } from './components/cover';
+import { Cover } from '@/features/onboarding/components/cover';
 
-export function OnboardingScreen() {
+export default function WelcomeScreen() {
   const [_, setIsFirstTime] = useIsFirstTime();
   const router = useRouter();
   return (
@@ -25,25 +25,25 @@ export function OnboardingScreen() {
           EasyPay
         </Text>
         <Text className="mb-2 text-center text-lg text-gray-600">
-          Un seul geste pour payer
+          Ton portefeuille, tous tes moyens de paiement
         </Text>
 
         <Text className="my-1 pt-6 text-left text-lg">
           Vise n'importe quel QR de paiement (Wave, Orange Money...).
         </Text>
         <Text className="my-1 text-left text-lg">
-          EasyPay reconnaît tout de suite à qui il appartient.
+          Choisis toi-même avec quel portefeuille tu payes.
         </Text>
         <Text className="my-1 text-left text-lg">
-          Et ouvre directement la bonne appli pour toi.
+          Peu importe lequel le commerçant te présente.
         </Text>
       </View>
-      <SafeAreaView className="mt-6">
+      <SafeAreaView className="mt-6 w-full px-6">
         <Button
           label="Commencer"
           onPress={() => {
             setIsFirstTime(false);
-            router.replace('/(app)');
+            router.push('/(auth)/phone');
           }}
         />
       </SafeAreaView>

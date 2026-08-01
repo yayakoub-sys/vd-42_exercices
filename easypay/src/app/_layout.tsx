@@ -48,7 +48,8 @@ export default function RootLayout() {
     <Providers onLayout={onLayoutRootView}>
       <Stack>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="pay" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
     </Providers>
   );

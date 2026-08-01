@@ -1,18 +1,36 @@
 import { Redirect, Tabs } from 'expo-router';
 import * as React from 'react';
 
+import { Text } from '@/components/ui';
 import {
   Feed as HistoryIcon,
   Home as ScannerIcon,
-  Settings as SettingsIcon,
+  Settings as AccountIcon,
 } from '@/components/ui/icons';
-import { useIsFirstTime } from '@/lib/hooks/use-is-first-time';
+import { isOnboardingComplete } from '@/storage/authState';
+
+// Icône simple, cohérente avec les autres (pas de nouvelle police d'icônes) : un portefeuille stylisé.
+function WalletsIcon({ color }: { color: string }) {
+  return <Text style={{ fontSize: 22, color }}>◫</Text>;
+}
 
 export default function TabLayout() {
-  const [isFirstTime] = useIsFirstTime();
+  const [checking, setChecking] = React.useState(true);
+  const [complete, setComplete] = React.useState(false);
 
-  if (isFirstTime) {
-    return <Redirect href="/onboarding" />;
+  React.useEffect(() => {
+    isOnboardingComplete().then((value) => {
+      setComplete(value);
+      setChecking(false);
+    });
+  }, []);
+
+  if (checking) {
+    return null;
+  }
+
+  if (!complete) {
+    return <Redirect href="/(auth)/welcome" />;
   }
 
   return (
@@ -27,6 +45,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="wallets"
+        options={{
+          title: 'Portefeuilles',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <WalletsIcon color={color} />,
+          tabBarButtonTestID: 'wallets-tab',
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: 'Historique',
@@ -36,12 +63,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="account"
         options={{
-          title: 'Réglages',
+          title: 'Compte',
           headerShown: false,
-          tabBarIcon: ({ color }) => <SettingsIcon color={color} />,
-          tabBarButtonTestID: 'settings-tab',
+          tabBarIcon: ({ color }) => <AccountIcon color={color} />,
+          tabBarButtonTestID: 'account-tab',
         }}
       />
     </Tabs>
