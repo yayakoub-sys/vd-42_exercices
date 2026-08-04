@@ -112,6 +112,11 @@ pas à une réinstallation.
 ```
 vd-42_exercices/
 ├── CLAUDE.md   ETAT.md   CARTE.md   GATE.md      ← les 4 fichiers de pilotage
+├── .claude/                                      ← le garde-fou, qui les rend EXECUTOIRES
+│   ├── settings.json                             ← branche les 3 hooks
+│   └── hooks/reprise.ps1                         ← injecte le point de reprise d'ETAT.md
+│       hooks/rotation.ps1                        ← alerte au-dela de 5 Mo de session
+│       hooks/borne-agents.ps1                    ← demande confirmation au 3e agent
 │
 ├── easypay/                                       🔨 CHANTIER EN COURS — 280 fichiers
 │   ├── BOUCLE-ANDROID.md                          ← la boucle quotidienne
