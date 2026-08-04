@@ -1,3 +1,5 @@
+@AGENTS.md
+
 > This project was generated from the [Obytes React Native Template](https://github.com/obytes/react-native-template-obytes), a production-ready React Native starter with modern tooling and best practices.
 
 ## What: Technology Stack
@@ -67,4 +69,23 @@ pnpm build:production:ios       # EAS production build
 - ✅ **DO** use MMKV storage for sensitive data (not AsyncStorage)
 - ✅ **DO** use EAS Build for production: `pnpm build:production:ios`
 - ✅ **DO** prefix env vars with `EXPO_PUBLIC_*` for app access
-- ❌ **DO NOT** modify `android/` or `ios/` directly (use Expo config plugins)
+
+## Android : `android/` est une SOURCE, pas un dossier généré
+
+Ce projet ne suit **plus** le flux « managed » du modèle de départ pour Android.
+Le dossier `android/` est **versionné dans git** et contient cinq correctifs sans
+lesquels le build ne passe pas sur ce poste Windows (chemin utilisateur contenant
+un espace, limite des 260 caractères). Chaque correctif est commenté à l'endroit
+où il s'applique. Voir [BOUCLE-ANDROID.md](BOUCLE-ANDROID.md).
+
+- ❌ **NE JAMAIS lancer** `expo prebuild`, `expo run:android`, `pnpm prebuild`
+  ni `pnpm android` : ces commandes **régénèrent `android/`** et effacent quatre
+  des cinq correctifs. Le build repartirait en erreur.
+- ✅ Si c'est arrivé : `git checkout -- easypay/android` restaure tout.
+- ✅ Build natif : le bouton ▶ **Run** d'Android Studio, ou
+  `cd android && ./gradlew :app:assembleDebug`.
+- ✅ Changement JavaScript / TypeScript : **rien à reconstruire**, Metro et le
+  Fast Refresh s'en chargent (`npx expo start --dev-client`).
+- ⚠️ `android/gradle.properties` est réglé sur `reactNativeArchitectures=x86_64`
+  (émulateur seul). **Remettre les quatre architectures** pour une build destinée
+  à de vrais téléphones.

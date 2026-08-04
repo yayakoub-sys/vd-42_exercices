@@ -7,6 +7,17 @@ const config = withUniwindConfig(getDefaultConfig(__dirname), {
 });
 
 /**
+ * Poste de developpement : 7,8 Go de memoire, 6 coeurs basse consommation.
+ *
+ * Par defaut Metro lance un processus de compilation par coeur. Pendant qu'un
+ * emulateur Android tourne (2 Go), la memoire disponible tombe a zero et la
+ * machine se met a permuter sur le disque : la compilation devient PLUS lente,
+ * et les requetes de l'application expirent avant d'avoir recu le bundle.
+ * Trois processus laissent de quoi respirer a l'emulateur et a Android Studio.
+ */
+config.maxWorkers = 3;
+
+/**
  * Mode "visite dans Expo Go" (EXPO_PUBLIC_GO=1).
  *
  * Expo Go ne contient pas les modules natifs ci-dessous. On les remplace par
