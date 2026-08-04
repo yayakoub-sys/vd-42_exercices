@@ -536,6 +536,41 @@ attente et ajout de `-no-metrics`.
 | Écran | ✅ capture : « EasyPay — Ton portefeuille, tous tes moyens de paiement » |
 | Conteneur du 2e projet | ✅ `homarr-redis` en marche |
 
+### 10.7 Android est sorti de la machine active — archivé, restaurable
+
+Décidé et exécuté le 2026-08-04 : **Android n'est plus l'environnement quotidien.**
+Il devient une capacité de validation ponctuelle. Déclencheur : Claude Cowork ne
+démarrait plus — « Not enough disk space to set up the workspace ».
+
+`C:` est passé de **10,39 à 19,71 Go libres** (+9,32 Go), sans rien perdre d'irremplaçable.
+
+| Quoi | Poids | Décision |
+|---|---|---|
+| Données du téléphone virtuel (`.android\avd`) | 3 780 Mo | 🗑️ **Supprimé** — reconstruit en 104 s depuis l'archive |
+| `easypay/android/app/build` | 990 Mo | 🗑️ Supprimé — reconstructible (GATE § 5.5) |
+| `C:\Windows\Temp` | 1 573 Mo | 🗑️ Vidé |
+| Magasin pnpm (paquets orphelins) | 499 Mo | 🗑️ `pnpm store prune` |
+| Cache npm | 171 Mo | 🗑️ `npm cache clean` |
+| `DockerDesktopUpdates` | 219 Mo | 🗑️ Supprimé |
+| **Définition de l'AVD + versions + mode d'emploi** | 6 Ko | 📦 **Archivé sur `H:\ANDROID_WORKSPACE\ARCHIVE-ANDROID\`** |
+| Android Studio, SDK, NDK, images système, JDK 21 | ~10 Go | ✅ **Conservés sur `C:`, intacts.** Fermés, ils ne coûtent pas de mémoire vive. |
+| Cache Gradle (`H:`), les 5 correctifs (git) | — | ✅ Intacts |
+| `%TEMP%\metro-cache` | 153 Mo | ✅ **Conservé** — le vider coûterait 3 min de recompilation |
+
+> 📦 **`H:\ANDROID_WORKSPACE\ARCHIVE-ANDROID\RESTAURATION.md`** contient la procédure
+> complète en 3 étapes, **testée pour de vrai** ce jour (démarrage en 104 s).
+> Elle inclut les trois commandes `pm disable-user` sans lesquelles Play Services
+> replante — elles vivent dans les données du téléphone et sont effacées à chaque
+> reconstruction.
+>
+> ⚠️ Cette archive est sur un **disque USB externe**. Disque débranché = Android non
+> restaurable. Les cinq correctifs de build, eux, sont dans git et sur GitHub.
+
+**Non fait, disponible si besoin :** déplacer le SDK + NDK + images système sur `H:`
+(≈ 6 Go de plus). Non fait volontairement — la marge actuelle suffit, et cela mettrait
+les compilations sur un disque dix fois plus lent. `C:\cxx-easypay` (127 Mo) n'a pas pu
+être supprimé (dossier racine protégé).
+
 ### 10.6 L'ordre de démarrage compte
 
 ✅ VÉRIFIÉ : l'émulateur a été **tué par manque de mémoire deux fois** quand Metro compilait
