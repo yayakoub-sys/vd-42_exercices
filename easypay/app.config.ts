@@ -8,10 +8,9 @@ import 'tsx/cjs';
 // eslint-disable-next-line perfectionist/sort-imports
 import Env from './env';
 
-// Ces deux valeurs viendront d'un vrai compte Expo créé pour EasyPay
-// (celles du modèle de départ ont été retirées : ce ne sont pas les nôtres).
-const EXPO_ACCOUNT_OWNER = undefined;
-const EAS_PROJECT_ID = '';
+// Compte Expo/EAS réel EasyPay
+const EXPO_ACCOUNT_OWNER = 'studio_42';
+const EAS_PROJECT_ID = '5391791b-bcb7-4737-9d5c-38cbdf6531b6';
 
 const appIconBadgeConfig: AppIconBadgeConfig = {
   enabled: Env.EXPO_PUBLIC_APP_ENV !== 'production',
