@@ -1,0 +1,54 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+  }
+}
+
+allprojects {
+  repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+  }
+}
+
+// Windows : limite historique de 260 caracteres sur les chemins.
+// CMake recopie le chemin absolu de chaque source dans le nom du fichier objet
+// (CMakeFiles/<cible>.dir/C_/Users/.../fichier.cpp.o.d). Sur ce poste cela donne
+// jusqu'a 347 caracteres pour react-native-reanimated. Or le ninja livre avec le
+// SDK Android (1.10.2) passe par les API Windows ANSI, plafonnees a 260 meme
+// quand les chemins longs sont actives au niveau systeme : il considere alors ces
+// fichiers comme inexistants et boucle sur
+//   ninja: error: manifest 'build.ninja' still dirty after 100 tries
+// CMAKE_OBJECT_PATH_MAX demande a CMake de raccourcir lui-meme les chemins
+// d'objets qui depasseraient cette valeur. On l'applique a tous les modules
+// natifs depuis la racine, pour ne rien modifier dans node_modules.
+// Second correctif, sans rapport visible avec le premier mais de meme origine
+// (un espace dans le chemin du poste) : voir fix-canonical-prefixes.cmake.
+// On passe par CMAKE_PROJECT_INCLUDE, qui AJOUTE des options aux projets CMake
+// au lieu d'ecraser celles que les modules definissent eux-memes.
+def correctifCmake = rootProject.file("fix-canonical-prefixes.cmake")
+                                .absolutePath.replace("\\", "/")
+
+subprojects { sub ->
+  sub.afterEvaluate {
+    def androidExt = sub.extensions.findByName("android")
+    if (androidExt != null) {
+      androidExt.defaultConfig.externalNativeBuild.cmake.arguments(
+        "-DCMAKE_OBJECT_PATH_MAX=240",
+        "-DCMAKE_PROJECT_INCLUDE=${correctifCmake}".toString()
+      )
+    }
+  }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"
