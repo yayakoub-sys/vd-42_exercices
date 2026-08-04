@@ -7,15 +7,24 @@ const config = withUniwindConfig(getDefaultConfig(__dirname), {
 });
 
 /**
- * Poste de developpement : 7,8 Go de memoire, 6 coeurs basse consommation.
+ * Poste de developpement : 7,8 Go de memoire, 6 coeurs physiques (i5-10400T).
  *
  * Par defaut Metro lance un processus de compilation par coeur. Pendant qu'un
- * emulateur Android tourne (2 Go), la memoire disponible tombe a zero et la
- * machine se met a permuter sur le disque : la compilation devient PLUS lente,
- * et les requetes de l'application expirent avant d'avoir recu le bundle.
- * Trois processus laissent de quoi respirer a l'emulateur et a Android Studio.
+ * emulateur Android tourne (2 Go en memoire vive, 4 Go engages), la memoire
+ * disponible tombe a zero et la machine se met a permuter sur le disque : la
+ * compilation devient PLUS lente, et les requetes de l'application expirent
+ * avant d'avoir recu le bundle.
+ *
+ * Mesure du 2026-08-04 : avec 3 processus, l'emulateur a ete tue par manque de
+ * memoire DEUX FOIS de suite pendant la premiere compilation (rapports de
+ * plantage a 18:59 et 19:19, `free_ram` a 427 Mo). Deux processus reduisent le
+ * pic sans changer grand-chose au temps de compilation, qui est domine par le
+ * cache disque.
+ *
+ * Le processeur n'est PAS le facteur limitant ici : il plafonne a 15 % au repos
+ * et les 6 coeurs ne sont jamais satures. C'est la memoire qui manque.
  */
-config.maxWorkers = 3;
+config.maxWorkers = 2;
 
 /**
  * Mode "visite dans Expo Go" (EXPO_PUBLIC_GO=1).
