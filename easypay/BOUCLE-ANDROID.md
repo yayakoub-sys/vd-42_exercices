@@ -32,7 +32,7 @@ C: à l'étroit. Le Pixel 8 montre l'application telle qu'elle sera vraiment vue
 **Android Studio** → ouvrir le dossier `easypay/android` → **Device Manager**
 (icône téléphone, à droite) → bouton **▶** sur `Pixel 8 API 35`.
 
-Compter environ **1 minute 10**. Une fois allumé, **le laisser allumé toute la
+Compter environ **30 secondes**. Une fois allumé, **le laisser allumé toute la
 journée** : on ne paie ce démarrage qu'une fois.
 
 ### 2. Allumer le serveur d'écrans
@@ -142,12 +142,14 @@ Effet mesuré : de « processeur saturé, plantage en boucle » à **0 plantage 
 
 Pour revenir en arrière : remplacer `disable-user` par `enable`.
 
-> **Correctif durable possible**, si tu veux t'en débarrasser proprement un
-> jour : dans Android Studio, **SDK Manager → SDK Platforms → cocher « Show
-> Package Details » → Android 15 → « Google APIs Intel x86_64 Atom System
-> Image »** (celle **sans** Play Store), puis recréer le téléphone virtuel
-> dessus. Cette image ne se met pas à jour toute seule, consomme moins de
-> mémoire et n'a pas ce défaut. Coût : environ 1,5 Go à télécharger.
+> **Décision prise le 2026-08-04 : on en reste là, et c'est réglé à la racine.**
+> Le Play Store étant désactivé, **plus aucune mise à jour de Play Services ne
+> peut arriver** — la version qui plantait ne peut pas être remplacée par une
+> autre du même genre. Télécharger une image sans Play Store aurait coûté 1,5 Go
+> sur le disque qu'on cherche justement à soulager, pour un gain nul.
+>
+> Vérifié après un redémarrage complet du téléphone virtuel : toujours désactivé,
+> toujours 0 plantage. Effet mesuré : le démarrage est passé de 70 à 30 secondes.
 
 ### Le démarrage rapide reste désactivé
 
@@ -169,6 +171,7 @@ Pour revenir en arrière : supprimer
 | Écran rouge, `ConnectException: Failed to connect to localhost` | Utiliser la ligne `10.0.2.2:8081` de l'écran d'accueil plutôt que `localhost`. Sinon : `adb reverse tcp:8081 tcp:8081`. |
 | Écran blanc qui dure | Attendre 3 minutes. Sinon appuyer sur `r` dans la fenêtre Metro. |
 | Le téléphone virtuel ne démarre pas | Vérifier l'espace libre sur C: — il faut au moins 3 Go. |
+| **C: est plein** | Éteindre le téléphone virtuel, puis supprimer le dossier `C:\Users\VAYA DIOMANDE\.android\avd\Pixel_8_API_35.avd\snapshots` : il pèse 2,5 Go et se recrée tout seul au démarrage suivant. **Uniquement téléphone éteint.** |
 | Un `▶ Run` échoue | Vérifier l'espace libre sur C: — un build complet consomme environ 3,5 Go. |
 | Tout devient très lent | Fermer Android Studio pendant les compilations Metro. La machine n'a que 7,8 Go de mémoire. |
 
@@ -181,7 +184,8 @@ C: structurellement à l'étroit.
 
 | Réglage | Valeur | Pourquoi |
 |---|---|---|
-| Mémoire du téléphone virtuel | 2 048 Mo | Au-delà, l'hôte n'a plus de quoi faire tourner Metro et Android Studio. |
+| Mémoire du téléphone virtuel | **2 560 Mo** | On demande 2 048 dans les réglages, mais l'émulateur remonte au minimum de l'appareil. C'est la valeur réelle. Au-delà, l'hôte n'a plus de quoi faire tourner Metro et Android Studio. |
+| Démarrage | à froid, verrouillé | `fastboot.forceColdBoot=yes` dans les réglages du téléphone virtuel, pour que ce soit pareil qu'on le lance depuis Android Studio ou en ligne de commande. |
 | Cœurs du téléphone virtuel | 4 | Laisse 2 cœurs au PC. |
 | `maxWorkers` de Metro | 3 | Par défaut Metro lance un processus par cœur ; la mémoire tombait à zéro et la machine permutait sur le disque — la compilation devenait **plus lente**. Réglé dans `metro.config.js`. |
 | Carte SD | 512 Mo | EasyPay n'en a pas besoin. |

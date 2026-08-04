@@ -143,8 +143,8 @@ vd-42_exercices/
 | `C:\Users\VAYA DIOMANDE\.android\avd\Pixel_8_API_35.avd\` | **Le seul émulateur.** Contient aussi les réglages Play Services désactivé. |
 | `C:\Users\VAYA DIOMANDE\.android\advancedFeatures.ini` | Démarrage rapide désactivé (`FastSnapshotV1 = off`). |
 | `C:\Users\VAYA DIOMANDE\AppData\Local\Android\Sdk` | Le SDK Android **actif**. |
-| `H:\ANDROID_WORKSPACE\gradle` | Cache Gradle (`GRADLE_USER_HOME`). |
-| `H:\ANDROID_WORKSPACE\sdk` | Copie du SDK, **vérifiée mais NON active**. Décision en attente. |
-| `C:\cxx-easypay` | Répertoire de travail C++ du module `:app`. Reconstructible. |
+| `H:\ANDROID_WORKSPACE\gradle` | Cache Gradle (`GRADLE_USER_HOME`), 7,7 Go. Bon emplacement : grossit sans fin, se lit surtout. |
+| ~~`H:\ANDROID_WORKSPACE\sdk`~~ | **SUPPRIMÉ le 2026-08-04.** C'était un miroir figé d'un dossier vivant. Décision tranchée : le SDK reste sur `C:`. |
+| `C:\cxx-easypay` | Répertoire de travail C++ du module `:app`. ⚠️ **Doit rester un chemin court sur `C:`** — c'est le correctif n° 4. |
 | `%TEMP%\metro-cache` | Cache de Metro. ⚠️ Ne pas vider le dossier Temp. |
 | `easypay/android/.idea/` | Ignoré par git, contient `gradleJvm=jbr-21`. S'il est perdu, Android Studio risque de retomber sur le JBR 25, que Gradle 8.14.3 refuse. |

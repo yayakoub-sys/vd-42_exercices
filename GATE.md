@@ -13,11 +13,11 @@ Règle générale : **un contrôle qu'on n'a pas lancé n'est pas un contrôle.*
 | # | Contrôle | Commande | Attendu |
 |---|---|---|---|
 | 0.1 | Où on est | `git status --short` puis `git log --oneline -5` | Branche `claude/universal-qr-code-reader-4cdw9s` |
-| 0.2 | Ce qui n'est pas sauvegardé | `git rev-list --left-right --count origin/claude/universal-qr-code-reader-4cdw9s...HEAD` | ⚠️ vaut **`0  5`** au 2026-08-04 : **5 commits locaux non poussés** |
-| 0.3 | Place sur le disque | `Get-PSDrive C` | ≥ 3 Go. Était à 9,61 Go. |
+| 0.2 | Ce qui n'est pas sauvegardé | `git rev-list --left-right --count origin/claude/universal-qr-code-reader-4cdw9s...HEAD` | ✅ **`0  0`** au 2026-08-04 : tout est poussé |
+| 0.3 | Place sur le disque | `Get-PSDrive C` | ≥ 3 Go. Était à **9,47 Go** (émulateur allumé). |
 
 **Si 0.2 n'est pas à `0 0`, le dire à l'utilisateur avant toute autre chose.** Les correctifs
-Android ne sont protégés que sur ce disque tant qu'ils ne sont pas poussés.
+Android ne seraient alors protégés que sur ce disque.
 
 ---
 
@@ -184,6 +184,34 @@ Claude s'exécute sur le vrai PC. Une suppression est réelle.
 | 5.3 | **Commiter avant d'effacer** un fichier non suivi par git, pour qu'il reste récupérable. C'est ce qui a été fait pour les deux lanceurs `.bat`. |
 | 5.4 | **Ne jamais supprimer le SDK de `C:`** tant qu'un build n'a pas été validé depuis `H:`. |
 | 5.5 | Ce qu'on peut effacer sans crainte, car reconstructible : `C:\cxx-easypay`, `easypay/android/build`, `easypay/android/app/build`. |
+
+### 5.6 — le geste de secours quand `C:` devient critique
+
+Le fichier `snapshots\default_boot\ram.img` de l'AVD pèse **2 560 Mo**. C'est la mémoire
+vive du téléphone virtuel : il est **recréé à chaque démarrage**, donc parfaitement sûr à
+supprimer — mais **seulement émulateur éteint**.
+
+```powershell
+adb emu kill
+Get-Process emulator -EA SilentlyContinue | Stop-Process -Force
+Remove-Item "$env:USERPROFILE\.android\avd\Pixel_8_API_35.avd\snapshots" -Recurse -Force
+```
+
+Gain constaté : `C:` de 9,51 à 12,01 Go. À refaire à volonté.
+
+⚠️ **Ne pas le faire émulateur allumé** : le fichier est en cours d'utilisation.
+
+### 5.7 — les décisions de stockage sont PRISES, ne pas les rouvrir
+
+Arbitré et exécuté le 2026-08-04, **mesures à l'appui** (voir [ETAT.md](ETAT.md) § 5) :
+
+- Le **SDK reste sur `C:`**. C'est la pièce la plus sollicitée de la chaîne. La copie sur
+  `H:` a été **supprimée**.
+- **Rien d'autre ne quitte `C:`** : tout ce qui y reste de volumineux est vivant.
+- Le **cache Gradle reste sur `H:`** (`GRADLE_USER_HOME`). C'était le bon déplacement.
+- `C:\cxx-easypay` **doit** rester sur `C:` : ce dossier existe pour être un chemin court.
+
+**Ne pas re-débattre sans nouvelles mesures.**
 
 ---
 
