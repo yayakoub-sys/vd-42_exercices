@@ -17,6 +17,7 @@ export default function PreviewScreen() {
   const router = useRouter();
   const qr = usePaymentDraftStore((s) => s.qr);
   const setQr = usePaymentDraftStore((s) => s.setQr);
+  const setAmount = usePaymentDraftStore((s) => s.setAmount);
 
   React.useEffect(() => {
     if (!qr) {
@@ -46,7 +47,13 @@ export default function PreviewScreen() {
   const amountLabel = formatEmvcoAmount(qr.emvco?.amount, qr.emvco?.currency);
 
   function handleContinue() {
-    if (qr?.emvco?.amount) {
+    // Quand le QR porte déjà son montant, on saute l'écran de saisie — mais il
+    // faut alors recopier ce montant dans le panier ici, car c'est l'écran de
+    // saisie qui s'en chargeait. Sans ça, le récapitulatif attend un montant qui
+    // n'arrive jamais et reste bloqué à charger : le paiement est impossible.
+    const qrAmount = Number(qr?.emvco?.amount);
+    if (Number.isFinite(qrAmount) && qrAmount > 0) {
+      setAmount(qrAmount);
       router.push('/pay/choose-source');
     } else {
       router.push('/pay/amount');
