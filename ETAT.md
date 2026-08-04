@@ -1,6 +1,8 @@
 # ÉTAT — où en est réellement le travail
 
-**Arrêté le 2026-08-04 à 17 h.** Remplace toute description d'état antérieure.
+**Arrêté le 2026-08-04, deuxième session.** Remplace toute description d'état antérieure.
+Le § 1 (point de reprise) et le § 9 (parcours produit) datent de cette deuxième session ;
+les § 2 à 8 datent de la session de 17 h et restent vrais sauf mention contraire.
 
 Chaque affirmation porte son statut :
 **✅ VÉRIFIÉ** (re-exécuté ou relu au moment de la rédaction) ·
@@ -16,21 +18,29 @@ L'application se construit, s'installe, démarre à froid en 30 s, se recharge t
 quand on modifie un écran, et se navigue. La caméra virtuelle fonctionne (indispensable au
 scan de QR).
 
-**Aucune décision n'est en attente. Rien n'est en suspens.**
+La deuxième session du 2026-08-04 a **commencé** le parcours produit et l'a **arrêté en
+cours de route** : voir § 9. Ce qui en sort tient en une phrase — **on ne peut pas payer**,
+et le parcours produit **ne doit pas être repris tel quel**.
 
 ### ➡️ PROCHAIN POINT DE REPRISE
 
-> **Parcourir les 44 écrans d'EasyPay un par un et noter, pour chacun, ce qui manque ou ne
-> correspond pas au besoin.** Personne ne l'a jamais fait. C'est un travail de **produit**,
-> pas de technique : il faut regarder l'écran dans l'émulateur et dire si ce qu'il montre
-> et ce qu'il permet sont justes.
+> ⚠️ **NE PAS reprendre l'inspection des 44 écrans.** La décision produit a changé.
 >
-> Commencer par le parcours le plus important : **`(auth)` (8 écrans) → `pay` (11 écrans)**,
-> c'est-à-dire s'inscrire, puis scanner un QR et payer. Garder `(app)` (24 écrans) pour
-> ensuite.
+> **La prochaine session recevra une mission précise portant sur la nouvelle carrosserie
+> d'EasyPay.** Cette mission sera donnée par l'utilisateur au début de la session.
 >
-> Rien à préparer : suivre [easypay/BOUCLE-ANDROID.md](easypay/BOUCLE-ANDROID.md), l'écran
-> apparaît en trois étapes.
+> **Ne rien anticiper de cette mission** : ne pas l'analyser, ne pas préparer d'architecture,
+> ne pas chercher de solution, ne lancer aucune mesure de performance. Attendre l'énoncé.
+>
+> Avant de commencer, lire quand même le § 9 ci-dessous : il dit ce qui est cassé
+> aujourd'hui et ce qui est laissé en dette. Rien de plus.
+
+### ➡️ LE SEUL POINT OUVERT, À TRANCHER PAR L'UTILISATEUR
+
+> Une correction est **écrite mais non prouvée** dans `easypay/src/app/pay/preview.tsx`
+> (§ 9.2). Décider : **la garder** (et la vérifier à l'écran), ou **l'annuler**
+> (`git revert` du commit correspondant). Tant que ce n'est pas tranché, considérer
+> **le paiement comme cassé**.
 
 ---
 
@@ -341,3 +351,99 @@ Ce qui a été **réellement exécuté et regardé**, pas déduit :
 | `npx eslint .` | 157 erreurs de mise en forme |
 | `git push` + `git fetch` | local = distant, `0 0`, correctifs présents à distance |
 | Suppression de `H:\...\sdk` | `H:` 112,73 → 118,80 Go |
+
+---
+
+## 9. Deuxième session du 2026-08-04 — le parcours produit, commencé puis arrêté
+
+Session arrêtée volontairement par l'utilisateur avant la fin. **Ce qui suit est tout ce qui
+a été réellement établi.** Rien d'autre n'a été examiné.
+
+### 9.1 Périmètre réellement couvert
+
+| Partie | Ce qui a été fait |
+|---|---|
+| `(auth)` — 8 écrans | ✅ **Lus dans le code uniquement.** ❌ **Jamais vus à l'écran** : le téléphone virtuel avait déjà une inscription terminée (profil « Aya Koffi », `0787770000`, un portefeuille Wave, historique vide). Les revoir demanderait d'effacer les données de l'application — **non fait**. |
+| `pay` — 11 écrans | ✅ Tous lus dans le code. ✅ **5 vus à l'écran** : coller un code, aperçu du QR, choix du portefeuille, récapitulatif, et les 4 onglets du bas. ❌ **6 jamais atteints** (attente, redirection, réussite, échec, fonds insuffisants, saisie du montant) — bloqués par 9.2. |
+| `(app)` — 24 écrans | ❌ **Non examinés.** Seuls les 4 onglets ont été vus de l'extérieur. |
+
+### 9.2 🚨 LE BLOCAGE : on ne peut pas payer
+
+✅ **VÉRIFIÉ À L'ÉCRAN**, capture à l'appui, attente de 15 s pour écarter un simple délai.
+
+**Quand le QR du commerçant porte déjà son montant — le cas le plus courant chez un
+commerçant — l'écran « Récapitulatif » tourne dans le vide sans fin.** Le paiement ne peut
+jamais aboutir.
+
+**Cause, lue dans le code :** l'aperçu du QR saute l'écran « Combien veux-tu payer ? »
+puisque le montant est déjà connu ([preview.tsx:48](easypay/src/app/pay/preview.tsx)) — or
+c'est **cet écran sauté** qui était le seul à ranger le montant dans le panier
+(`setAmount`). Le récapitulatif attend donc un montant qui n'arrivera jamais
+([recap.tsx:23](easypay/src/app/pay/recap.tsx)). Conséquence en cascade : même en passant
+outre, `waiting.tsx` paierait **0 FCFA** (`amountFcfa ?? 0`).
+
+**Une correction est écrite** dans `preview.tsx` : recopier le montant du QR dans le panier
+avant de passer au choix du portefeuille.
+
+| Statut de cette correction | |
+|---|---|
+| Cohérence du code (`npx tsc --noemit`) | ✅ **PASSE** — 0 erreur |
+| Preuve à l'écran | ❌ **AUCUNE.** Le serveur d'écrans **n'a pas rechargé** la modification avant l'arrêt (aucun `Android Bundled` après la modification dans le journal Metro). |
+
+> **À dire tel quel : 1 sur le code écrit, 0 sur la preuve.** Ne jamais présenter cette
+> correction comme fonctionnelle. La première chose à faire si on y revient : relancer le
+> parcours et **regarder l'écran**.
+
+### 9.3 🚨 Le code secret ne sert à rien
+
+📋 **DÉDUIT du code** (recherche sur tout `easypay/src/`) : la fonction qui vérifie le code
+secret (`verifyPin`) **n'est appelée nulle part**. Le code est créé, rangé sous forme
+d'empreinte — puis **plus jamais demandé** : ni pour ouvrir l'application, ni pour confirmer
+un paiement.
+
+Deux écrans le promettent pourtant noir sur blanc :
+- `pin-create` : « Ce code à 4 chiffres te servira à ouvrir EasyPay **et à confirmer tes
+  paiements**. »
+- `consent` : « Avant chaque paiement, EasyPay te demandera **toujours** ton accord. »
+
+C'est un écart entre la promesse faite à l'utilisateur et ce que fait l'application.
+**Non corrigé.**
+
+### 9.4 Dette — observations hors mission, consignées sans traitement
+
+Aucune n'a été corrigée. Aucune n'a été creusée. Elles sont notées pour ne pas être
+redécouvertes une troisième fois.
+
+| Où | Constat | Statut |
+|---|---|---|
+| Scanner | Après **un** scan, la caméra ne rescanne plus jamais tant que l'application n'est pas relancée (le verrou anti-double-scan n'est jamais relâché). | 📋 DÉDUIT du code |
+| « Coller un code » | L'écran existe et fonctionne, mais **aucun bouton de l'application n'y mène**. Atteint uniquement par lien direct. | ✅ VÉRIFIÉ (code + écran) |
+| Historique | « **Sorry! No data found** » — en anglais. | ✅ VÉRIFIÉ à l'écran |
+| Historique | Le titre et le bouton « Filtrer » sont **écrasés par l'heure et les icônes** du téléphone (marge haute non respectée). | ✅ VÉRIFIÉ à l'écran |
+| Compte | « **Language** », « **Theme** », « **System** » — en anglais. | ✅ VÉRIFIÉ à l'écran |
+| Compte / Portefeuilles | Le numéro est **en clair** sur Compte, **masqué** ailleurs — et masqué de **deux façons différentes** (`07 ** ** 00 00` puis `••••••0000`). | ✅ VÉRIFIÉ à l'écran |
+| Portefeuilles | Le titre « Mes portefeuilles » est écrit **deux fois** (barre du haut + page). Même défaut sur « Coller un code ». | ✅ VÉRIFIÉ à l'écran |
+| Portefeuilles | **Aucun solde affiché.** Or choisir son portefeuille est le cœur du produit, et le solde est l'information qui permet de choisir. | ✅ VÉRIFIÉ à l'écran |
+| Choix du portefeuille | « **Wave · Wave** » répété (le surnom reprend le nom de l'opérateur). | ✅ VÉRIFIÉ à l'écran |
+| Choix du portefeuille | **Le montant à payer n'est plus visible** au moment de choisir avec quoi payer. | ✅ VÉRIFIÉ à l'écran |
+| Aperçu du QR | **Pas de bouton « Annuler »** sur un écran de paiement. | ✅ VÉRIFIÉ à l'écran |
+| Barre du bas | L'icône de « Scanner » est une **maison** ; celle de « Portefeuilles » est un caractère `◫`, visuellement étranger aux autres. | ✅ VÉRIFIÉ à l'écran |
+| Scanner | Bouton « Historique » en haut à droite, **alors qu'un onglet Historique existe déjà** en bas. | ✅ VÉRIFIÉ à l'écran |
+| Inscription | Le code secret accepte **0000** et **1234**. | 📋 DÉDUIT du code |
+| Inscription | La date de naissance est un texte libre : **ni format contrôlé, ni âge minimum**. | 📋 DÉDUIT du code |
+| Inscription | Conditions d'utilisation et politique de confidentialité : **texte vide** (« bientôt disponible »). | 📋 DÉDUIT du code |
+| Inscription | La « vérification d'identité » demande le **type** de pièce, mais **ni numéro ni photo** : elle ne vérifie rien. Elle se déclare « vérifiée » après 3 secondes. | 📋 DÉDUIT du code |
+| Inscription | Si l'application est fermée pendant la vérification, l'écran peut rester bloqué **sans aucune sortie** (pas de bouton retour). | 📋 DÉDUIT du code |
+| Frais | Le récapitulatif annonce « Total débité = montant + frais », mais la simulation ne compare **que le montant** au solde. | 📋 DÉDUIT du code |
+
+### 9.5 Faits d'exploitation utiles (gain de temps la prochaine fois)
+
+| Fait | Détail |
+|---|---|
+| `adb` **n'est pas** dans le chemin système | Utiliser `"$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"`. Idem pour `emulator.exe`. |
+| Tester Metro | `http://localhost:8081/status` **échoue** depuis PowerShell ; `http://127.0.0.1:8081/status` **fonctionne**. |
+| Ouvrir un écran précis | Liens directs actifs, schéma **`easypay://`**. Exemple qui marche : `adb shell am start -a android.intent.action.VIEW -d "easypay://pay/manual-entry"`. |
+| Injecter un QR sans caméra | Écran « Coller un code » + `adb shell input text "<chaîne EMVCo>"`. La frappe prend ~10 s : **attendre avant de capturer l'écran**. |
+| QR de test qui marche | `00020101021126290010A0000000010111MERCHANT1235303952540415005802CI5907CHEZAYA6007ABIDJAN63041D3A` → « CHEZAYA, 1 500 FCFA ». Pas d'espace dans le nom du commerçant, sinon la frappe casse. |
+| ⚠️ Fast Refresh | **N'a pas fonctionné** sur la modification de `preview.tsx` en fin de session. Vérifier `Android Bundled` dans le journal Metro **avant** de croire qu'une modification est appliquée. |
+| État du téléphone virtuel | Inscription déjà terminée. Pour revoir les écrans d'inscription il faudrait **effacer les données de l'application** — cela supprimerait le portefeuille Wave enregistré. |
