@@ -1,8 +1,10 @@
 # ÉTAT — où en est réellement le travail
 
-**Arrêté le 2026-08-04, deuxième session.** Remplace toute description d'état antérieure.
-Le § 1 (point de reprise) et le § 9 (parcours produit) datent de cette deuxième session ;
-les § 2 à 8 datent de la session de 17 h et restent vrais sauf mention contraire.
+**Arrêté le 2026-08-04, troisième session.** Remplace toute description d'état antérieure.
+Le § 10 (ressources du poste) date de cette troisième session ; le § 1 (point de reprise) et
+le § 9 (parcours produit) datent de la deuxième ; les § 2 à 8 datent de la session de 17 h et
+restent vrais **sauf ce que le § 10 corrige** — lire le § 10 avant de se fier aux chiffres
+matériels du § 6 et à l'état du téléphone virtuel décrit au § 9.5.
 
 Chaque affirmation porte son statut :
 **✅ VÉRIFIÉ** (re-exécuté ou relu au moment de la rédaction) ·
@@ -446,4 +448,102 @@ redécouvertes une troisième fois.
 | Injecter un QR sans caméra | Écran « Coller un code » + `adb shell input text "<chaîne EMVCo>"`. La frappe prend ~10 s : **attendre avant de capturer l'écran**. |
 | QR de test qui marche | `00020101021126290010A0000000010111MERCHANT1235303952540415005802CI5907CHEZAYA6007ABIDJAN63041D3A` → « CHEZAYA, 1 500 FCFA ». Pas d'espace dans le nom du commerçant, sinon la frappe casse. |
 | ⚠️ Fast Refresh | **N'a pas fonctionné** sur la modification de `preview.tsx` en fin de session. Vérifier `Android Bundled` dans le journal Metro **avant** de croire qu'une modification est appliquée. |
-| État du téléphone virtuel | Inscription déjà terminée. Pour revoir les écrans d'inscription il faudrait **effacer les données de l'application** — cela supprimerait le portefeuille Wave enregistré. |
+| État du téléphone virtuel | ⚠️ **PÉRIMÉ — voir § 10.3.** Le téléphone virtuel a été reconstruit à neuf : l'inscription et le portefeuille Wave **n'existent plus**. |
+
+---
+
+## 10. Troisième session du 2026-08-04 — ressources du poste
+
+### 10.1 La contrainte physique est la MÉMOIRE, pas le processeur
+
+✅ VÉRIFIÉ, mesuré sur le poste :
+
+| | |
+|---|---|
+| Mémoire vive totale | **7,81 Go** |
+| Processeur | Intel i5-10400T, **6 cœurs / 12 fils**, occupé à **13–16 %** même en pleine charge |
+| Mémoire engagée, EasyPay en marche | **23,69 Go** — soit **3 fois** la mémoire physique |
+
+**Le processeur n'est jamais saturé. C'est la mémoire qui manque.** Toute optimisation
+qui gagne du processeur en dépensant de la mémoire va dans le mauvais sens ici.
+
+Poids réels, EasyPay complet en marche (engagé / réellement en mémoire) :
+
+| Poste | Engagé | En mémoire |
+|---|---|---|
+| Émulateur (`qemu`) | **4 335 Mo** | 1 162 Mo |
+| Claude (17 processus, **4 sessions ouvertes**) | **4 362 Mo** | 809 Mo |
+| Chrome | 2 793 Mo | 397 Mo |
+| Metro + node | 2 011 Mo | 768 Mo |
+| Docker/WSL | 997 Mo | 140 Mo |
+
+> **Une seule session Claude Code doit rester ouverte quand on travaille sur EasyPay.**
+> Chaque session en trop coûte ≈ 0,55 Go. C'est le levier le plus rentable côté utilisateur.
+
+### 10.2 Ce qui a été changé, et où ça vit
+
+| Quoi | Où | Valeur |
+|---|---|---|
+| Plafond de Docker/WSL | `C:\Users\VAYA DIOMANDE\.wslconfig` **(hors dépôt, non versionné)** | `memory=2GB`, `processors=4`, `swap=1GB`, `vmIdleTimeout=60000` |
+| Metro | `easypay/metro.config.js` (versionné) | `maxWorkers = 2` (était 3) |
+
+Sans `.wslconfig`, Windows applique le défaut documenté par Microsoft : la machine virtuelle
+Linux se réserve **50 % de la mémoire du PC** (3 819 Mo) et **tous les processeurs** (12),
+alors qu'elle ne fait tourner qu'un seul petit conteneur. Elle est passée à **1 904 Mo et
+4 processeurs**. Pour annuler : supprimer le fichier puis `wsl --shutdown`.
+
+❌ **Aucune exclusion antivirus n'a été appliquée.** La commande a été bloquée par la
+sécurité, puis l'utilisateur a demandé de ne pas y revenir. Kaspersky **et** Windows
+Defender restent tous deux actifs en temps réel.
+
+### 10.3 🚨 INCIDENT — le téléphone virtuel a disparu, cause inconnue
+
+Pendant la session, le dossier `C:\Users\VAYA DIOMANDE\.android\avd\` (2,7 Go) **a disparu
+entièrement** entre deux démarrages de l'émulateur.
+
+| | |
+|---|---|
+| Cause | ❓ **INCONNUE ET NON RÉSOLUE.** Aucune commande de la session ne visait ce dossier ; aucun journal Windows, Defender ou Kaspersky ne montre de suppression. |
+| Piste non confirmée | Deux antivirus temps réel cohabitent, et un balayage Defender a eu lieu à 19:30. Aucune preuve. |
+| Réparation | ✅ AVD **reconstruit à l'identique** depuis une sauvegarde du `config.ini` prise en début de session. L'image système (2,05 Go) était intacte : aucun téléchargement. |
+| Perte définitive | ❌ **Les données du téléphone.** L'inscription « Aya Koffi » et le portefeuille Wave **n'existent plus**. Effet de bord utile : les 8 écrans `(auth)` sont de nouveau atteignables. |
+| Risque résiduel | ⚠️ **Peut se reproduire.** Parade appliquée : sauvegarder `config.ini` avant toute manipulation de l'AVD. Ce fichier suffit à tout reconstruire en ~2 minutes. |
+
+### 10.4 Le piège qui déguisait tout le reste
+
+Après un plantage, l'émulateur **conserve le rapport et attend un clic sur une boîte de
+dialogue** avant de démarrer. Symptôme : « l'émulateur ne démarre plus », « la machine est
+saturée ». Réalité : il attendait une réponse.
+
+✅ VÉRIFIÉ : de « ne démarre jamais, 246 s » à **37 s**, après suppression des rapports en
+attente et ajout de `-no-metrics`.
+
+> **À mettre dans la boucle quotidienne : lancer l'émulateur avec `-no-metrics`.**
+> Et si l'émulateur « ne démarre plus », vider
+> `%LOCALAPPDATA%\Temp\AndroidEmulator\*.dmp` **avant** de soupçonner la mémoire.
+> C'est le cinquième symptôme de ce poste dont la cause n'a rien à voir avec l'apparence.
+
+### 10.5 État fonctionnel après reconstruction — ✅ VÉRIFIÉ
+
+| Preuve | Résultat |
+|---|---|
+| `emulator -list-avds` | `Pixel_8_API_35` |
+| Démarrage à froid | ✅ 104 s (première initialisation ; 37 s ensuite) |
+| Play Services re-désactivés | ✅ `com.android.vending`, `com.google.android.gms` en `disabled-user` |
+| APK réinstallé | ✅ `app-debug.apk` 80,4 Mo, `Success` |
+| Bundle Metro | ✅ 6 324 Ko en 18 s (cache chaud, émulateur au repos) |
+| Application chargée | ✅ `topResumedActivity = com.easypay.development/.MainActivity` |
+| Écran | ✅ capture : « EasyPay — Ton portefeuille, tous tes moyens de paiement » |
+| Conteneur du 2e projet | ✅ `homarr-redis` en marche |
+
+### 10.6 L'ordre de démarrage compte
+
+✅ VÉRIFIÉ : l'émulateur a été **tué par manque de mémoire deux fois** quand Metro compilait
+en même temps. La séquence qui passe :
+
+1. Lancer Metro,
+2. **préchauffer le bundle émulateur éteint** —
+   `http://127.0.0.1:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&transform.bytecode=1&transform.engine=hermes`,
+3. **puis** démarrer l'émulateur.
+
+Les deux pics ne se superposent plus.
