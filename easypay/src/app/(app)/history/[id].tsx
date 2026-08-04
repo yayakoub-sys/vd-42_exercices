@@ -1,7 +1,14 @@
+import type { PaymentTransaction } from '@/core/wallet-engine/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
-import { Share } from 'react-native';
 
+import { Share } from 'react-native';
+import {
+  apparencePourStatut,
+  formatAmount,
+  formatFullDate,
+  libelleStatut,
+} from '@/components/transaction-format';
 import {
   ActivityIndicator,
   Button,
@@ -11,45 +18,62 @@ import {
   TouchableOpacity,
   View,
 } from '@/components/ui';
-import type { PaymentTransaction } from '@/core/wallet-engine/types';
 import { getTransaction } from '@/storage/transactionsState';
+
+/**
+ * Détail d'un paiement — carrosserie transplantée depuis BlueWallet (MIT),
+ * écran `screen/transactions/details.tsx`.
+ *
+ * REPRIS : le bandeau de tête « grosse pastille d'état + montant + libellé »,
+ * puis des lignes d'information PLATES separées par des filets, sans carte
+ * encadrée. Le regard trouve le montant en premier, le détail ensuite.
+ *
+ * RETIRÉ : identifiant de transaction blockchain, confirmations, frais de
+ * réseau en sat/vB, lien vers l'explorateur de blocs.
+ *
+ * GREFFÉ : commerçant, opérateur EasyPay, commission, total réellement
+ * débité, et les TROIS états réels — « fonds insuffisants » n'est plus
+ * confondu avec un échec.
+ */
 
 const QR_PREVIEW_LIMIT = 120;
 
-function formatFullDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 function truncateQr(raw: string): string {
-  if (raw.length <= QR_PREVIEW_LIMIT) return raw;
+  if (raw.length <= QR_PREVIEW_LIMIT)
+    return raw;
   return `${raw.slice(0, QR_PREVIEW_LIMIT)}…`;
 }
 
 function buildReceiptText(transaction: PaymentTransaction): string {
-  const title = transaction.merchantName ?? transaction.merchantProviderLabel;
-  const statusLabel = transaction.status === 'success' ? 'Réussi' : 'Échoué';
+  const titre = transaction.merchantName ?? transaction.merchantProviderLabel;
   return [
     'Reçu EasyPay',
-    `Commerçant : ${title}`,
-    `Montant : ${transaction.amount} ${transaction.currency}`,
+    `Commerçant : ${titre}`,
+    `Montant : ${formatAmount(transaction.amount)} ${transaction.currency}`,
     `Payé avec : ${transaction.sourceOperatorLabel}`,
-    `Commission EasyPay : ${transaction.commission} ${transaction.currency}`,
-    `Statut : ${statusLabel}`,
+    `Commission EasyPay : ${formatAmount(transaction.commission)} ${transaction.currency}`,
+    `Total débité : ${formatAmount(transaction.amount + transaction.commission)} ${transaction.currency}`,
+    `Statut : ${libelleStatut(transaction.status)}`,
     `Date : ${formatFullDate(transaction.timestamp)}`,
   ].join('\n');
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+/** Ligne d'information plate, separee par un filet — pas de carte encadree. */
+function InfoRow({
+  label,
+  value,
+  fort = false,
+}: {
+  label: string;
+  value: string;
+  fort?: boolean;
+}) {
   return (
-    <View className="mb-4 flex-row items-start justify-between">
+    <View className="flex-row items-start justify-between border-b border-neutral-100 py-4 dark:border-neutral-800">
       <Text className="pr-4 text-sm text-neutral-500 dark:text-neutral-400">{label}</Text>
-      <Text className="flex-1 text-right text-base font-semibold">{value}</Text>
+      <Text className={`flex-1 text-right text-[15px] ${fort ? 'font-bold' : 'font-medium'}`}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -71,7 +95,8 @@ export default function TransactionDetailScreen() {
   }, [id]);
 
   const onShare = React.useCallback(() => {
-    if (!transaction) return;
+    if (!transaction)
+      return;
     Share.share({ message: buildReceiptText(transaction) });
   }, [transaction]);
 
@@ -95,55 +120,50 @@ export default function TransactionDetailScreen() {
     );
   }
 
-  const title = transaction.merchantName ?? transaction.merchantProviderLabel;
-  const isSuccess = transaction.status === 'success';
+  const titre = transaction.merchantName ?? transaction.merchantProviderLabel;
+  const { cercle, Icone } = apparencePourStatut(transaction.status);
+  const aCoute = transaction.status === 'success';
 
   return (
     <View className="flex-1 bg-white dark:bg-black">
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
-        <View className="mb-6 items-center">
-          <Text className="text-3xl font-bold">
-            {transaction.amount}
+      <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Bandeau de tete : etat, montant, commercant */}
+        <View className="items-center py-8">
+          <View className={`mb-4 size-14 items-center justify-center rounded-full ${cercle}`}>
+            <Icone width={26} height={26} />
+          </View>
+          <Text className="text-[34px] font-bold">
+            {formatAmount(transaction.amount)}
             {' '}
             {transaction.currency}
           </Text>
-          <View
-            className={
-              isSuccess
-                ? 'mt-2 rounded-full bg-success-100 px-3 py-1 dark:bg-success-900'
-                : 'mt-2 rounded-full bg-danger-100 px-3 py-1 dark:bg-danger-900'
-            }
-          >
-            <Text
-              className={
-                isSuccess
-                  ? 'text-xs font-semibold text-success-700 dark:text-success-300'
-                  : 'text-xs font-semibold text-danger-700 dark:text-danger-300'
-              }
-            >
-              {isSuccess ? 'Paiement réussi' : 'Paiement échoué'}
-            </Text>
-          </View>
+          <Text className="mt-1 text-base text-neutral-500 dark:text-neutral-400">
+            {libelleStatut(transaction.status)}
+          </Text>
+          <Text className="mt-3 text-lg font-semibold">{titre}</Text>
         </View>
 
-        <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-          <InfoRow label="Commerçant" value={title} />
-          <InfoRow label="Payé avec" value={transaction.sourceOperatorLabel} />
-          <InfoRow label="Commission EasyPay" value={`${transaction.commission} ${transaction.currency}`} />
-          <InfoRow label="Date" value={formatFullDate(transaction.timestamp)} />
-          <InfoRow label="QR scanné" value={truncateQr(transaction.merchantQrRaw)} />
-        </View>
-
-        <Button
-          label="Partager ce reçu"
-          onPress={onShare}
-          className="mt-6"
+        <InfoRow label="Payé avec" value={transaction.sourceOperatorLabel} />
+        <InfoRow
+          label="Commission EasyPay"
+          value={`${formatAmount(transaction.commission)} ${transaction.currency}`}
         />
+        <InfoRow
+          label={aCoute ? 'Total débité' : 'Aurait été débité'}
+          value={`${formatAmount(transaction.amount + transaction.commission)} ${transaction.currency}`}
+          fort
+        />
+        <InfoRow label="Date" value={formatFullDate(transaction.timestamp)} />
+        <InfoRow label="QR scanné" value={truncateQr(transaction.merchantQrRaw)} />
+
+        <Button label="Partager ce reçu" onPress={onShare} className="mt-8" />
 
         <TouchableOpacity
-          onPress={() => router.push({ pathname: '/(app)/history/report', params: { id: transaction.id } })}
+          onPress={() =>
+            router.push({ pathname: '/(app)/history/report', params: { id: transaction.id } })}
           className="mt-2 items-center py-3"
+          accessibilityRole="button"
         >
           <Text className="text-sm font-semibold text-danger-600">Signaler un problème</Text>
         </TouchableOpacity>

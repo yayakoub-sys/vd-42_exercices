@@ -16,7 +16,7 @@ import type { OperatorId } from './types';
  */
 
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function sendOtp(_phoneNumber: string): Promise<void> {
@@ -29,9 +29,9 @@ export async function verifyOtp(_phoneNumber: string, code: string): Promise<boo
   return /^\d{6}$/.test(code);
 }
 
-export interface LinkWalletResult {
+export type LinkWalletResult = {
   success: boolean;
-}
+};
 
 export async function linkWallet(_operator: OperatorId, phoneNumber: string): Promise<LinkWalletResult> {
   await delay(1400);
@@ -42,20 +42,38 @@ export async function linkWallet(_operator: OperatorId, phoneNumber: string): Pr
 /** Solde simulé par opérateur, pour pouvoir déclencher "fonds insuffisants" de façon prévisible. */
 const MOCK_BALANCE_FCFA = 50_000;
 
+/**
+ * Solde d'un portefeuille.
+ *
+ * Ce solde existait déjà — il servait uniquement, en interne, à décider si un
+ * paiement échouait pour fonds insuffisants. Il n'était affiché NULLE PART.
+ * Or choisir avec quel portefeuille payer est le cœur du produit, et le solde
+ * est justement l'information qui permet de choisir (manque relevé dans
+ * ETAT.md § 9.4).
+ *
+ * On l'expose donc, sans changer la règle de simulation existante. Le jour où
+ * un vrai opérateur est branché, c'est cette fonction qui sera remplacée, et
+ * rien d'autre.
+ */
+export async function getWalletBalance(_walletId: string): Promise<number> {
+  await delay(200);
+  return MOCK_BALANCE_FCFA;
+}
+
 export function computeCommission(amountFcfa: number): number {
   // Simulation d'une commission de facilitation (celle que touche EasyPay au passage).
   return Math.max(15, Math.round(amountFcfa * 0.005));
 }
 
-export interface InitiatePaymentParams {
+export type InitiatePaymentParams = {
   amountFcfa: number;
-}
+};
 
-export interface InitiatePaymentResult {
+export type InitiatePaymentResult = {
   success: boolean;
   commission: number;
   reason?: 'insufficient_funds' | 'declined';
-}
+};
 
 export async function initiatePayment({ amountFcfa }: InitiatePaymentParams): Promise<InitiatePaymentResult> {
   await delay(1600);

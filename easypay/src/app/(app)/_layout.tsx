@@ -1,18 +1,13 @@
 import { Redirect, Tabs } from 'expo-router';
 import * as React from 'react';
 
-import { Text } from '@/components/ui';
 import {
-  Feed as HistoryIcon,
-  Home as ScannerIcon,
-  Settings as AccountIcon,
-} from '@/components/ui/icons';
+  AccountIcon,
+  HistoryIcon,
+  ScanIcon,
+  WalletsIcon,
+} from '@/components/ui/icons/tabs';
 import { isOnboardingComplete } from '@/storage/authState';
-
-// Icône simple, cohérente avec les autres (pas de nouvelle police d'icônes) : un portefeuille stylisé.
-function WalletsIcon({ color }: { color: string }) {
-  return <Text style={{ fontSize: 22, color }}>◫</Text>;
-}
 
 export default function TabLayout() {
   const [checking, setChecking] = React.useState(true);
@@ -40,7 +35,7 @@ export default function TabLayout() {
         options={{
           title: 'Scanner',
           headerShown: false,
-          tabBarIcon: ({ color }) => <ScannerIcon color={color} />,
+          tabBarIcon: ({ color }) => <ScanIcon color={color} />,
           tabBarButtonTestID: 'scanner-tab',
         }}
       />

@@ -1,83 +1,96 @@
+import type { PaymentTransaction } from '@/core/wallet-engine/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { formatAmount } from '@/components/transaction-format';
+import { TransactionRow } from '@/components/transaction-row';
 import {
   ActivityIndicator,
-  EmptyList,
   FocusAwareStatusBar,
   List,
-  Pressable,
-  SafeAreaView,
   Text,
   TouchableOpacity,
   View,
 } from '@/components/ui';
-import type { PaymentTransaction } from '@/core/wallet-engine/types';
 import { getTransactions } from '@/storage/transactionsState';
 
-function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('fr-FR', {
+/**
+ * Historique — carrosserie transplantée depuis BlueWallet (MIT),
+ * écran `screen/wallets/transactions.tsx`.
+ *
+ * REPRIS : le total en tête de liste, les lignes plates séparées par des
+ * en-têtes de jour, l'absence de cadre par ligne, l'état vide qui explique
+ * quoi faire au lieu de constater le vide.
+ *
+ * CORRIGÉ au passage (constats d'ETAT.md § 9.4) :
+ *   - l'en-tête passait sous l'heure et les icônes du téléphone : la zone
+ *     sûre est désormais respectée ;
+ *   - l'état vide s'affichait « Sorry! No data found » en anglais.
+ */
+
+const JOUR = 86_400_000;
+
+type Ligne
+  = | { type: 'jour'; cle: string; libelle: string }
+    | { type: 'transaction'; cle: string; transaction: PaymentTransaction };
+
+function libelleDeJour(timestamp: number): string {
+  const debutDuJour = new Date().setHours(0, 0, 0, 0);
+  if (timestamp >= debutDuJour)
+    return 'Aujourd\'hui';
+  if (timestamp >= debutDuJour - JOUR)
+    return 'Hier';
+  return new Date(timestamp).toLocaleDateString('fr-FR', {
     day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
-function StatusBadge({ status }: { status: PaymentTransaction['status'] }) {
-  const isSuccess = status === 'success';
+/** Aplatit les transactions en lignes, avec un en-tête à chaque changement de jour. */
+function enLignes(transactions: PaymentTransaction[]): Ligne[] {
+  const lignes: Ligne[] = [];
+  let jourCourant = '';
+  for (const t of transactions) {
+    const libelle = libelleDeJour(t.timestamp);
+    if (libelle !== jourCourant) {
+      jourCourant = libelle;
+      lignes.push({ type: 'jour', cle: `jour-${libelle}`, libelle });
+    }
+    lignes.push({ type: 'transaction', cle: t.id, transaction: t });
+  }
+  return lignes;
+}
+
+function EnTeteDeJour({ libelle }: { libelle: string }) {
   return (
-    <View
-      className={
-        isSuccess
-          ? 'rounded-full bg-success-100 px-3 py-1 dark:bg-success-900'
-          : 'rounded-full bg-danger-100 px-3 py-1 dark:bg-danger-900'
-      }
-    >
-      <Text
-        className={
-          isSuccess
-            ? 'text-xs font-semibold text-success-700 dark:text-success-300'
-            : 'text-xs font-semibold text-danger-700 dark:text-danger-300'
-        }
-      >
-        {isSuccess ? 'Réussi' : 'Échoué'}
+    <View className="bg-white px-4 pt-5 pb-1 dark:bg-black">
+      <Text className="text-xs font-semibold tracking-wide text-neutral-400 uppercase dark:text-neutral-500">
+        {libelle}
       </Text>
     </View>
   );
 }
 
-function TransactionRow({ transaction, onPress }: { transaction: PaymentTransaction; onPress: () => void }) {
-  const title = transaction.merchantName ?? transaction.merchantProviderLabel;
+function ListeVide() {
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900"
-    >
-      <View className="mb-2 flex-row items-start justify-between">
-        <Text className="flex-1 pr-2 text-base font-semibold">{title}</Text>
-        <StatusBadge status={transaction.status} />
+    <View className="items-center px-10 pt-24">
+      <View className="mb-4 size-16 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <Text className="text-2xl">🧾</Text>
       </View>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm text-neutral-500 dark:text-neutral-400">
-          {transaction.sourceOperatorLabel}
-        </Text>
-        <Text className="text-base font-bold">
-          {transaction.amount}
-          {' '}
-          {transaction.currency}
-        </Text>
-      </View>
-      <Text className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
-        {formatDate(transaction.timestamp)}
+      <Text className="text-center text-base font-semibold">Aucun paiement pour l'instant</Text>
+      <Text className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
+        Scanne le QR d'un commerçant : tes reçus apparaîtront ici.
       </Text>
-    </Pressable>
+    </View>
   );
 }
 
 export default function HistoryListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [transactions, setTransactions] = React.useState<PaymentTransaction[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -94,17 +107,42 @@ export default function HistoryListScreen() {
     }, [load]),
   );
 
+  const lignes = React.useMemo(() => enLignes(transactions), [transactions]);
+
+  // Total réellement débité : les paiements échoués n'ont rien coûté.
+  const total = React.useMemo(
+    () =>
+      transactions
+        .filter(t => t.status === 'success')
+        .reduce((somme, t) => somme + t.amount + t.commission, 0),
+    [transactions],
+  );
+  const devise = transactions[0]?.currency ?? 'FCFA';
+
   return (
     <View className="flex-1 bg-white dark:bg-black">
       <FocusAwareStatusBar />
-      <View className="flex-row items-center justify-between px-4 pt-4">
-        <Text className="text-2xl font-bold">Historique</Text>
-        <TouchableOpacity
-          onPress={() => router.push('/(app)/history/filter')}
-          className="rounded-full bg-primary-800 px-4 py-2"
-        >
-          <Text className="text-sm font-semibold text-white">Filtrer</Text>
-        </TouchableOpacity>
+
+      {/* En-tete : la zone sure est respectee, l'heure du telephone ne l'ecrase plus. */}
+      <View style={{ paddingTop: insets.top + 8 }} className="px-4 pb-2">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-[28px] font-bold">Historique</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(app)/history/filter')}
+            className="rounded-full bg-neutral-100 px-4 py-2 dark:bg-neutral-800"
+            accessibilityRole="button"
+          >
+            <Text className="text-sm font-semibold">Filtrer</Text>
+          </TouchableOpacity>
+        </View>
+
+        {transactions.length > 0
+          ? (
+              <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {`${formatAmount(total)} ${devise} dépensés · ${transactions.length} paiement${transactions.length > 1 ? 's' : ''}`}
+              </Text>
+            )
+          : null}
       </View>
 
       {isLoading
@@ -115,20 +153,25 @@ export default function HistoryListScreen() {
           )
         : (
             <List
-              data={transactions}
-              keyExtractor={(item: PaymentTransaction) => item.id}
-              contentContainerStyle={{ padding: 16 }}
-              ListEmptyComponent={<EmptyList isLoading={isLoading} />}
-              renderItem={({ item }: { item: PaymentTransaction }) => (
-                <TransactionRow
-                  transaction={item}
-                  onPress={() =>
-                    router.push({ pathname: '/(app)/history/[id]', params: { id: item.id } })}
-                />
-              )}
+              data={lignes}
+              keyExtractor={(item: Ligne) => item.cle}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+              ListEmptyComponent={<ListeVide />}
+              renderItem={({ item }: { item: Ligne }) =>
+                item.type === 'jour'
+                  ? <EnTeteDeJour libelle={item.libelle} />
+                  : (
+                      <TransactionRow
+                        transaction={item.transaction}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/(app)/history/[id]',
+                            params: { id: item.transaction.id },
+                          })}
+                      />
+                    )}
             />
           )}
-      <SafeAreaView />
     </View>
   );
 }
