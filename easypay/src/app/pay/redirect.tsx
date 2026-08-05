@@ -7,7 +7,7 @@ import { usePaymentDraftStore } from '@/core/wallet-engine/paymentDraftStore';
 
 export default function RedirectScreen() {
   const router = useRouter();
-  const sourceWallet = usePaymentDraftStore((s) => s.sourceWallet);
+  const sourceWallet = usePaymentDraftStore(s => s.sourceWallet);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {

@@ -233,4 +233,3 @@ function etiquetteOperateur(id: string): string {
   };
   return table[id] ?? id;
 }
-
