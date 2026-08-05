@@ -26,13 +26,21 @@ et le parcours produit **ne doit pas être repris tel quel**.
 
 ### ➡️ PROCHAIN POINT DE REPRISE
 
-> **La carrosserie BlueWallet est portée dans EasyPay (§ 11) — mais RIEN N'A ÉTÉ VU
-> À L'ÉCRAN.** L'émulateur est archivé (§ 10.7) et le code n'a jamais tourné.
+> **L'APK EXISTE** : `Bureau\EasyPay-2026-08-05.apk`, 66,8 Mo, pour de vrais
+> téléphones Android (§ 11.7). La carrosserie BlueWallet est portée dans tout
+> l'écran d'EasyPay (§ 11).
 >
-> **La seule chose à faire ensuite : le regarder tourner.** Restaurer l'environnement
-> Android via `H:\ANDROID_WORKSPACE\ARCHIVE-ANDROID\RESTAURATION.md`, reconstruire l'APK
-> (~45 min, car les sorties de compilation ont été supprimées), lancer
-> `easypay/MODE-MOBILE.ps1`, et vérifier le dashboard, le scanner et le paiement.
+> ⚠️ **MAIS RIEN N'A JAMAIS ÉTÉ VU À L'ÉCRAN.** Types et tests passent, l'APK se
+> construit — **personne n'a encore lancé cette application.** 1 sur le code,
+> 0 sur l'usage.
+>
+> **La seule chose à faire ensuite : installer cet APK sur un vrai téléphone
+> Android et parcourir l'application.** Pas besoin d'émulateur, pas besoin de
+> Metro : l'APK est autonome.
+>
+> Ce que ce premier essai doit vérifier : le dashboard et ses cartes, le scanner
+> et sa torche, un paiement de bout en bout avec le code secret, le verrouillage
+> à l'ouverture, et que tout est bien en français.
 >
 > ⚠️ **NE PAS reprendre l'inspection des 44 écrans.** ⚠️ **NE PAS relancer un audit.**
 > ⚠️ **NE PAS re-porter ce qui est déjà porté** : lire le § 11 avant de toucher au code.
@@ -669,7 +677,36 @@ directement sur n'importe quel téléphone Android, sans PC ni Metro.
 Le type `release` est signé avec la clé de développement : l'APK s'installe sans
 problème, mais **n'est pas publiable sur le Play Store** en l'état.
 
-### 11.7 Reste à faire
+### 11.7 ✅ L'APK EXISTE — 2026-08-05, 02:50
+
+**`C:\Users\VAYA DIOMANDE\Desktop\EasyPay-2026-08-05.apk` — 66,8 Mo.**
+Refabricable à volonté par `easypay/FABRIQUER-APK.ps1`.
+
+| Vérifié dans le fichier | |
+|---|---|
+| Architectures embarquées | ✅ **`arm64-v8a` + `armeabi-v7a`** — de vrais téléphones, **pas** `x86_64` |
+| JavaScript embarqué | ✅ `assets/index.android.bundle`, 4 Mo → **tourne sans Metro ni PC** |
+| Signature | ✅ signé (`CN=Android Debug`) → s'installe ; **pas publiable sur le Play Store** en l'état |
+| Build | ✅ `BUILD SUCCESSFUL`, code de sortie 0 |
+
+⚠️ **66,8 Mo dépasse la limite de 30 Mo de la conversation** : le fichier n'a pas pu
+être transmis ici. Il est sur le Bureau, à envoyer par WhatsApp ou clé USB.
+
+#### Deux correctifs de build découverts en le fabriquant
+
+Ces deux pannes **dormaient depuis le début** : elles ne pouvaient apparaître qu'au
+premier build destiné à un téléphone réel, jamais en compilant pour l'émulateur.
+
+| # | Panne | Cause réelle |
+|---|---|---|
+| **6** | `ninja: manifest 'build.ninja' still dirty after 100 tries` sur `react-native-mmkv` | `RelWithDebInfo`/`armeabi-v7a` font 14 caractères de plus que `Debug`/`x86_64`. Assez pour franchir la limite que le ninja du SDK traite en ANSI — **même avec `LongPathsEnabled=1`**, vérifié. Encore l'espace de « VAYA DIOMANDE ». Correctif : `buildStagingDirectory` étendu à toutes les bibliothèques, vers `C:/cxx-easypay/<module>`. |
+| **7** | `OutOfMemoryError` sur `lintVitalAnalyzeRelease` | Contrôle de style lancé **uniquement** en build de production ; il charge tout le bytecode d'un module. 2 Go de tas ne suffisent pas. Désactivé : il n'analyse que le Java/Kotlin des bibliothèques tierces, pas une ligne d'EasyPay. |
+
+> **Le poste en est à SEPT correctifs de build**, et six ont la même cause profonde :
+> l'espace dans le nom d'utilisateur, ou la petitesse de la machine. Ne jamais
+> régénérer `easypay/android/`.
+
+### 11.8 Reste à faire
 
 - Vérification d'identité : elle demande le **type** de pièce, ni numéro ni photo, et
   se déclare « vérifiée » après 3 secondes (§ 9.4). Non traité.
