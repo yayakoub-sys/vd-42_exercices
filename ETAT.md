@@ -26,16 +26,16 @@ et le parcours produit **ne doit pas être repris tel quel**.
 
 ### ➡️ PROCHAIN POINT DE REPRISE
 
-> ⚠️ **NE PAS reprendre l'inspection des 44 écrans.** La décision produit a changé.
+> **La carrosserie BlueWallet est portée dans EasyPay (§ 11) — mais RIEN N'A ÉTÉ VU
+> À L'ÉCRAN.** L'émulateur est archivé (§ 10.7) et le code n'a jamais tourné.
 >
-> **La prochaine session recevra une mission précise portant sur la nouvelle carrosserie
-> d'EasyPay.** Cette mission sera donnée par l'utilisateur au début de la session.
+> **La seule chose à faire ensuite : le regarder tourner.** Restaurer l'environnement
+> Android via `H:\ANDROID_WORKSPACE\ARCHIVE-ANDROID\RESTAURATION.md`, reconstruire l'APK
+> (~45 min, car les sorties de compilation ont été supprimées), lancer
+> `easypay/MODE-MOBILE.ps1`, et vérifier le dashboard, le scanner et le paiement.
 >
-> **Ne rien anticiper de cette mission** : ne pas l'analyser, ne pas préparer d'architecture,
-> ne pas chercher de solution, ne lancer aucune mesure de performance. Attendre l'énoncé.
->
-> Avant de commencer, lire quand même le § 9 ci-dessous : il dit ce qui est cassé
-> aujourd'hui et ce qui est laissé en dette. Rien de plus.
+> ⚠️ **NE PAS reprendre l'inspection des 44 écrans.** ⚠️ **NE PAS relancer un audit.**
+> ⚠️ **NE PAS re-porter ce qui est déjà porté** : lire le § 11 avant de toucher au code.
 
 ### ➡️ LE SEUL POINT OUVERT, À TRANCHER PAR L'UTILISATEUR
 
@@ -570,6 +570,74 @@ démarrait plus — « Not enough disk space to set up the workspace ».
 (≈ 6 Go de plus). Non fait volontairement — la marge actuelle suffit, et cela mettrait
 les compilations sur un disque dix fois plus lent. `C:\cxx-easypay` (127 Mo) n'a pas pu
 être supprimé (dossier racine protégé).
+
+## 11. Carrosserie BlueWallet — portée dans EasyPay (2026-08-05)
+
+**Donneur : [BlueWallet](https://github.com/BlueWallet/BlueWallet), licence MIT.**
+Source complète clonée sur `H:\ANDROID_WORKSPACE\bluewallet-src` (26 Mo, 77 écrans,
+88 composants). Copie de la licence conservée dans `easypay/LICENSE-BLUEWALLET` —
+c'est la seule obligation du MIT, et elle est remplie.
+
+**Pourquoi BlueWallet et pas un modèle payant :** contrainte 0 €, et c'est une vraie
+application financière en production, pas une collection de maquettes.
+
+### 11.1 Ce qui a été porté — ✅ code écrit, ❌ jamais vu à l'écran
+
+| Pièce EasyPay | Origine chez le donneur |
+|---|---|
+| `components/ui/theme.ts` | `components/themes.ts` — ~90 emplacements sémantiques, clair + sombre |
+| `components/wallet-card.tsx` | `WalletsCarousel.tsx` — géométrie reprise à l'identique |
+| `app/(app)/wallets/index.tsx` | `screen/wallets/WalletsList.tsx` — le dashboard |
+| `components/transaction-row.tsx` | `TransactionListItem.tsx` |
+| `app/(app)/history/[id].tsx` | `screen/transactions/TransactionStatus.tsx` |
+| `features/scanner/scanner-screen.tsx` | `screen/send/ScanQRCode.tsx` |
+| `app/pay/recap.tsx` | `screen/send/Confirm.tsx` |
+| `features/auth/pin-pad.tsx` | `screen/UnlockWith.tsx` |
+| `components/ui/icons/tabs.tsx` | `components/icons/` — gabarit 24×24, trait 1,8 |
+
+**Retiré :** Bitcoin, Lightning, multisig, HD, watch-only, frais en sat/vB, explorateur
+de blocs, cours BTC, phrases de récupération, sélection d'UTXO.
+**Greffé :** palette EasyPay, six opérateurs mobile money ivoiriens, FCFA, commission,
+et le bouton Scanner en évidence sur le dashboard.
+
+**Arbitrage :** pas de `react-native-linear-gradient` — dépendance native, ~45 min de
+reconstruction sur ce poste. Le dégradé est rendu en pur JS.
+
+### 11.2 Défauts d'ETAT.md réglés au passage — 📋 DÉDUIT du code, non vus à l'écran
+
+| Défaut | Où c'était consigné |
+|---|---|
+| Le code secret n'était **jamais** redemandé (`verifyPin` appelée nulle part) | § 9.3 |
+| Le récapitulatif tournait **à l'infini** sur un panier incomplet, sans issue | § 9.2 |
+| Après **un** scan, la caméra ne rescannait plus jamais | § 9.4 |
+| « Total débité = montant + frais » annoncé, mais seul le montant comparé au solde | § 9.4 |
+| Aucun bouton **Annuler** sur deux écrans de paiement | § 9.4 |
+| « Coller un code » existait sans qu'aucun bouton n'y mène | § 9.4 |
+| **Aucun solde affiché** nulle part | § 9.4 |
+| « Fonds insuffisants » affiché comme un simple échec | § 9.2 |
+| Icône **maison** pour Scanner, caractère `◫` pour Portefeuilles | § 9.4 |
+| « Mes portefeuilles » écrit deux fois ; en-tête de l'historique sous l'heure | § 9.4 |
+| État vide « Sorry! No data found » en anglais | § 9.4 |
+
+### 11.3 Ce qui est prouvé, et ce qui ne l'est pas
+
+| | |
+|---|---|
+| Types (`tsc --noemit`) | ✅ **0 erreur** |
+| Tests (`npx jest`) | ✅ **53/54** — la référence exacte du dépôt, aucune régression |
+| Style sur les fichiers portés | ✅ 0 erreur |
+| **Rendu à l'écran** | ❌ **AUCUNE PREUVE.** L'émulateur est archivé, rien n'a tourné. |
+
+> **À dire tel quel : 1 sur le code, 0 sur l'écran.** Ne jamais présenter cette
+> carrosserie comme fonctionnelle avant de l'avoir regardée.
+
+### 11.4 Reste à porter
+
+Paramètres (`screen/settings/*`), gestion des bénéficiaires, notifications, et le
+déverrouillage du démarrage de l'application par le code (l'écran de paiement est fait,
+l'ouverture de l'application ne l'est pas).
+
+---
 
 ### 10.6 L'ordre de démarrage compte
 
