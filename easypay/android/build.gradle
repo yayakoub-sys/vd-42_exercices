@@ -74,6 +74,25 @@ subprojects { sub ->
         androidExt.externalNativeBuild.cmake.buildStagingDirectory =
           file("${racineCxx}/${sub.name}")
       }
+
+      // Septieme correctif, meme journee, meme build de production.
+      //
+      // `lintVital` est le controle de style qu'Android lance UNIQUEMENT sur
+      // les builds de production. Il charge en memoire le bytecode de tout le
+      // module pour l'analyser. Sur ce poste de 7,8 Go, avec 2 Go de tas
+      // accordes a Gradle, il tombe sur :
+      //   Execution failed for task ':react-native-reanimated:lintVitalAnalyzeRelease'
+      //   OutOfMemoryError: ClassLoader.defineClass1
+      //
+      // On le desactive plutot que de lui donner plus de memoire, pour deux
+      // raisons : la machine n'en a pas a donner, et ce controle n'analyse que
+      // le code Java/Kotlin des bibliotheques tierces — pas une ligne du code
+      // d'EasyPay, qui est en TypeScript et deja verifie par tsc et eslint.
+      // C'est d'ailleurs le reglage par defaut du modele React Native.
+      if (androidExt.hasProperty("lint")) {
+        androidExt.lint.checkReleaseBuilds = false
+        androidExt.lint.abortOnError = false
+      }
     }
   }
 }
