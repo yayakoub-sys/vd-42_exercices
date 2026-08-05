@@ -1,9 +1,9 @@
+import type { OperatorId } from '@/core/wallet-engine/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import { ActivityIndicator, FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { linkWallet } from '@/core/wallet-engine/mockBackend';
-import type { OperatorId } from '@/core/wallet-engine/types';
 import { addWallet } from '@/storage/walletsState';
 
 export default function AddWalletWaitingScreen() {
@@ -15,7 +15,8 @@ export default function AddWalletWaitingScreen() {
 
     async function run() {
       const result = await linkWallet(operator, phone);
-      if (cancelled) return;
+      if (cancelled)
+        return;
       if (result.success) {
         await addWallet(operator, phone);
         router.replace({ pathname: '/(app)/wallets/add-success', params: { operator } });

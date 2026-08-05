@@ -58,6 +58,7 @@ function Ligne({ libelle, valeur }: { libelle: string; valeur: string }) {
 
 export function PaymentOutcome({
   issue,
+  titre: titrePersonnalise,
   montantFcfa,
   message,
   details = [],
@@ -67,6 +68,8 @@ export function PaymentOutcome({
   onSecondaire,
 }: {
   issue: Issue;
+  /** Remplace le titre par défaut — le même composant sert aussi hors paiement. */
+  titre?: string;
   montantFcfa?: number;
   message?: string;
   details?: { libelle: string; valeur: string }[];
@@ -75,7 +78,8 @@ export function PaymentOutcome({
   libelleSecondaire?: string;
   onSecondaire?: () => void;
 }) {
-  const { cercle, titre } = APPARENCES[issue];
+  const { cercle, titre: titreParDefaut } = APPARENCES[issue];
+  const titre = titrePersonnalise ?? titreParDefaut;
 
   return (
     <View className="flex-1 bg-white dark:bg-black">

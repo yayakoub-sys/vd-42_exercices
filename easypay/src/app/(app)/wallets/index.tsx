@@ -54,6 +54,102 @@ import { getWallets } from '@/storage/walletsState';
 
 const DERNIERES_OPERATIONS = 4;
 
+/** Le total : la premiere question de l'utilisateur, « combien j'ai ». */
+function Total({ total, nbPortefeuilles }: { total: number; nbPortefeuilles: number }) {
+  return (
+    <View className="px-5 pb-1">
+      <Text className="text-sm text-neutral-500 dark:text-neutral-400">Total disponible</Text>
+      <View className="mt-1 flex-row items-baseline">
+        <Text className="text-[40px] leading-[44px] font-bold">{formatAmount(total)}</Text>
+        <Text className="ml-2 text-lg font-semibold text-neutral-500 dark:text-neutral-400">
+          FCFA
+        </Text>
+      </View>
+      <Text className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+        {nbPortefeuilles === 0
+          ? 'Aucun portefeuille relié'
+          : `${nbPortefeuilles} portefeuille${nbPortefeuilles > 1 ? 's' : ''} relié${nbPortefeuilles > 1 ? 's' : ''}`}
+      </Text>
+    </View>
+  );
+}
+
+function Carrousel({
+  wallets,
+  soldes,
+  pas,
+  onOuvrir,
+}: {
+  wallets: LinkedWallet[];
+  soldes: Record<string, number>;
+  pas: number;
+  onOuvrir: (id: string) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{
+        paddingLeft: 20,
+        paddingTop: CARROUSEL_MARGE_HAUT,
+        paddingBottom: CARROUSEL_MARGE_BAS,
+      }}
+      snapToInterval={pas}
+      decelerationRate="fast"
+    >
+      {wallets.map(p => (
+        <WalletCard
+          key={p.id}
+          wallet={p}
+          soldeFcfa={soldes[p.id]}
+          onPress={() => onOuvrir(p.id)}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+function DernieresOperations({
+  operations,
+  onOuvrir,
+  onToutVoir,
+}: {
+  operations: PaymentTransaction[];
+  onOuvrir: (id: string) => void;
+  onToutVoir: () => void;
+}) {
+  if (operations.length === 0)
+    return null;
+  return (
+    <View>
+      <View className="mt-2 flex-row items-center justify-between px-5">
+        <Text className="text-lg font-bold">Dernières opérations</Text>
+        <TouchableOpacity onPress={onToutVoir} accessibilityRole="button">
+          <Text className="text-sm font-semibold text-primary-600">Tout voir</Text>
+        </TouchableOpacity>
+      </View>
+      <View className="mt-1">
+        {operations.map(t => (
+          <TransactionRow key={t.id} transaction={t} onPress={() => onOuvrir(t.id)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function SansPortefeuille() {
+  return (
+    <View className="mx-5 mt-3 items-center rounded-2xl bg-neutral-100 px-6 py-8 dark:bg-neutral-800">
+      <Text className="text-center text-base font-semibold">
+        Relie ton premier portefeuille
+      </Text>
+      <Text className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
+        Wave, Orange Money, MTN… pour pouvoir payer un commerçant.
+      </Text>
+    </View>
+  );
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -78,7 +174,7 @@ export default function DashboardScreen() {
       .finally(() => setChargement(false));
   }, []);
 
-  useFocusEffect(React.useCallback(() => { charger(); }, [charger]));
+  useFocusEffect(React.useCallback(() => charger(), [charger]));
 
   const total = React.useMemo(
     () => Object.values(soldes).reduce((s, v) => s + v, 0),
@@ -103,21 +199,7 @@ export default function DashboardScreen() {
         contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1 — Le total : la premiere question de l'utilisateur */}
-        <View className="px-5 pb-1">
-          <Text className="text-sm text-neutral-500 dark:text-neutral-400">Total disponible</Text>
-          <View className="mt-1 flex-row items-baseline">
-            <Text className="text-[40px] leading-[44px] font-bold">{formatAmount(total)}</Text>
-            <Text className="ml-2 text-lg font-semibold text-neutral-500 dark:text-neutral-400">
-              FCFA
-            </Text>
-          </View>
-          <Text className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-            {wallets.length === 0
-              ? 'Aucun portefeuille relié'
-              : `${wallets.length} portefeuille${wallets.length > 1 ? 's' : ''} relié${wallets.length > 1 ? 's' : ''}`}
-          </Text>
-        </View>
+        <Total total={total} nbPortefeuilles={wallets.length} />
 
         {/* 2 — Le geste numero un d'EasyPay, en evidence */}
         <View className="mt-5 px-5">
@@ -146,66 +228,22 @@ export default function DashboardScreen() {
         </View>
 
         {wallets.length === 0
-          ? (
-              <View className="mx-5 mt-3 items-center rounded-2xl bg-neutral-100 px-6 py-8 dark:bg-neutral-800">
-                <Text className="text-center text-base font-semibold">
-                  Relie ton premier portefeuille
-                </Text>
-                <Text className="mt-2 text-center text-sm text-neutral-500 dark:text-neutral-400">
-                  Wave, Orange Money, MTN… pour pouvoir payer un commerçant.
-                </Text>
-              </View>
-            )
+          ? <SansPortefeuille />
           : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingLeft: 20,
-                  paddingTop: CARROUSEL_MARGE_HAUT,
-                  paddingBottom: CARROUSEL_MARGE_BAS,
-                }}
-                snapToInterval={pas}
-                decelerationRate="fast"
-              >
-                {wallets.map(p => (
-                  <WalletCard
-                    key={p.id}
-                    wallet={p}
-                    soldeFcfa={soldes[p.id]}
-                    onPress={() =>
-                      router.push({ pathname: '/(app)/wallets/[id]', params: { id: p.id } })}
-                  />
-                ))}
-              </ScrollView>
+              <Carrousel
+                wallets={wallets}
+                soldes={soldes}
+                pas={pas}
+                onOuvrir={id => router.push({ pathname: '/(app)/wallets/[id]', params: { id } })}
+              />
             )}
 
         {/* 4 — Les dernieres operations, sans quitter l'ecran */}
-        {recentes.length > 0
-          ? (
-              <View>
-                <View className="mt-2 flex-row items-center justify-between px-5">
-                  <Text className="text-lg font-bold">Dernières opérations</Text>
-                  <TouchableOpacity
-                    onPress={() => router.push('/(app)/history')}
-                    accessibilityRole="button"
-                  >
-                    <Text className="text-sm font-semibold text-primary-600">Tout voir</Text>
-                  </TouchableOpacity>
-                </View>
-                <View className="mt-1">
-                  {recentes.map(t => (
-                    <TransactionRow
-                      key={t.id}
-                      transaction={t}
-                      onPress={() =>
-                        router.push({ pathname: '/(app)/history/[id]', params: { id: t.id } })}
-                    />
-                  ))}
-                </View>
-              </View>
-            )
-          : null}
+        <DernieresOperations
+          operations={recentes}
+          onOuvrir={id => router.push({ pathname: '/(app)/history/[id]', params: { id } })}
+          onToutVoir={() => router.push('/(app)/history')}
+        />
       </ScrollView>
     </View>
   );

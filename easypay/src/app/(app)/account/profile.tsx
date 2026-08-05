@@ -1,9 +1,9 @@
+import type { AuthState, KycProfile } from '@/core/wallet-engine/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import { Button, FocusAwareStatusBar, SafeAreaView, Text, View } from '@/components/ui';
-import type { AuthState, KycProfile } from '@/core/wallet-engine/types';
 import { getAuthState } from '@/storage/authState';
 import { getKycProfile } from '@/storage/kycState';
 

@@ -1,8 +1,8 @@
-import { useFocusEffect } from '@react-navigation/native';
-import * as React from 'react';
-
-import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import type { KycProfile } from '@/core/wallet-engine/types';
+import { useFocusEffect } from '@react-navigation/native';
+
+import * as React from 'react';
+import { FocusAwareStatusBar, Text, View } from '@/components/ui';
 import { getKycProfile } from '@/storage/kycState';
 
 function statusLabel(status: KycProfile['status']): string {

@@ -1,36 +1,30 @@
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 
-import { Button, FocusAwareStatusBar, SafeAreaView, Text, View } from '@/components/ui';
+import { PaymentOutcome } from '@/components/payment-outcome';
+import { FocusAwareStatusBar } from '@/components/ui';
 
+/**
+ * Liaison refusée — même mise en scène que les autres fins de parcours.
+ *
+ * GREFFÉ : on dit ce qu'il faut vérifier. « Impossible de confirmer » sans
+ * indication laisse l'utilisateur relancer la même chose à l'identique.
+ */
 export default function AddWalletFailScreen() {
   const router = useRouter();
 
   return (
-    <View className="flex-1 items-center justify-center bg-white p-6 dark:bg-black">
+    <>
       <FocusAwareStatusBar />
-      <View className="mb-6 size-20 items-center justify-center rounded-full bg-danger-500">
-        <Text className="text-4xl font-bold text-white">✕</Text>
-      </View>
-      <Text className="mb-2 text-center text-2xl font-bold">
-        Impossible de confirmer ce portefeuille.
-      </Text>
-      <Text className="mb-8 text-center text-base text-neutral-500 dark:text-neutral-400">
-        Vérifie le numéro et réessaie, ou annule pour revenir à tes portefeuilles.
-      </Text>
-      <SafeAreaView className="w-full gap-3">
-        <Button
-          label="Réessayer"
-          onPress={() => router.replace('/(app)/wallets/add')}
-          testID="wallet-add-fail-retry-button"
-        />
-        <Button
-          label="Annuler"
-          variant="outline"
-          onPress={() => router.replace('/(app)/wallets/')}
-          testID="wallet-add-fail-cancel-button"
-        />
-      </SafeAreaView>
-    </View>
+      <PaymentOutcome
+        issue="echec"
+        titre="Compte non relié"
+        message="Ton opérateur n'a pas confirmé. Vérifie que le numéro est bien celui de ce compte mobile money, et qu'il est actif."
+        libelleBouton="Réessayer"
+        onBouton={() => router.replace('/(app)/wallets/add')}
+        libelleSecondaire="Revenir à mes portefeuilles"
+        onSecondaire={() => router.replace('/(app)/wallets/')}
+      />
+    </>
   );
 }

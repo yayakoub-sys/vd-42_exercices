@@ -1,9 +1,9 @@
+import type { OperatorId } from '@/core/wallet-engine/types';
 import { useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import { Button, ScrollView, Text, TouchableOpacity, View } from '@/components/ui';
 import { OPERATOR_LIST } from '@/core/wallet-engine/operators';
-import type { OperatorId } from '@/core/wallet-engine/types';
 
 type StatusFilter = 'all' | 'success' | 'failed';
 type OperatorFilter = 'all' | OperatorId;
@@ -14,8 +14,8 @@ function ChoiceChip({ label, isSelected, onPress }: { label: string; isSelected:
       onPress={onPress}
       className={
         isSelected
-          ? 'mb-3 mr-3 rounded-full bg-primary-800 px-4 py-2'
-          : 'mb-3 mr-3 rounded-full border border-neutral-300 px-4 py-2 dark:border-neutral-600'
+          ? 'mr-3 mb-3 rounded-full bg-primary-800 px-4 py-2'
+          : 'mr-3 mb-3 rounded-full border border-neutral-300 px-4 py-2 dark:border-neutral-600'
       }
     >
       <Text className={isSelected ? 'text-sm font-semibold text-white' : 'text-sm font-semibold'}>
@@ -43,7 +43,7 @@ export default function HistoryFilterScreen() {
       <ScrollView className="mb-6">
         <View className="flex-row flex-wrap">
           <ChoiceChip label="Tous" isSelected={operator === 'all'} onPress={() => setOperator('all')} />
-          {OPERATOR_LIST.map((op) => (
+          {OPERATOR_LIST.map(op => (
             <ChoiceChip
               key={op.id}
               label={op.label}

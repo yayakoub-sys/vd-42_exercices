@@ -1,8 +1,9 @@
+import type { AuthState, KycProfile } from '@/core/wallet-engine/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Alert } from 'react-native';
 
+import { Alert } from 'react-native';
 import {
   FocusAwareStatusBar,
   Pressable,
@@ -11,7 +12,6 @@ import {
   View,
 } from '@/components/ui';
 import { ArrowRight } from '@/components/ui/icons';
-import type { AuthState, KycProfile } from '@/core/wallet-engine/types';
 import { LanguageItem } from '@/features/settings/components/language-item';
 import { SettingsContainer } from '@/features/settings/components/settings-container';
 import { ThemeItem } from '@/features/settings/components/theme-item';
@@ -19,9 +19,11 @@ import { getAuthState } from '@/storage/authState';
 import { getKycProfile } from '@/storage/kycState';
 
 function getInitials(name?: string): string {
-  if (!name) return '?';
+  if (!name)
+    return '?';
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
+  if (parts.length === 0)
+    return '?';
   const first = parts[0].charAt(0);
   const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
   return (first + last).toUpperCase();
@@ -112,7 +114,7 @@ export default function AccountHomeScreen() {
     <>
       <FocusAwareStatusBar />
       <ScrollView>
-        <View className="flex-1 px-4 pb-10 pt-16">
+        <View className="flex-1 px-4 pt-16 pb-10">
           <Text className="text-xl font-bold">Compte</Text>
 
           <View className="mt-4 flex-row items-center rounded-md border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800">

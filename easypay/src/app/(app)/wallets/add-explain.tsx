@@ -1,9 +1,9 @@
+import type { OperatorId } from '@/core/wallet-engine/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import { Button, FocusAwareStatusBar, SafeAreaView, Text, View } from '@/components/ui';
 import { OPERATORS } from '@/core/wallet-engine/operators';
-import type { OperatorId } from '@/core/wallet-engine/types';
 
 export default function AddWalletExplainScreen() {
   const router = useRouter();
@@ -13,8 +13,8 @@ export default function AddWalletExplainScreen() {
   return (
     <View className="flex-1 bg-white p-6 dark:bg-black">
       <FocusAwareStatusBar />
-      <Text className="mb-4 mt-4 text-2xl font-bold">Avant de continuer</Text>
-      <Text className="text-base leading-6 text-neutral-600 dark:text-neutral-400">
+      <Text className="my-4 text-2xl font-bold">Avant de continuer</Text>
+      <Text className="text-base/6 text-neutral-600 dark:text-neutral-400">
         Tu vas être redirigé vers l'appli
         {' '}
         {operatorInfo.label}

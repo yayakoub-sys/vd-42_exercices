@@ -1,38 +1,36 @@
+import type { OperatorId } from '@/core/wallet-engine/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 
-import { Button, FocusAwareStatusBar, SafeAreaView, Text, View } from '@/components/ui';
+import { PaymentOutcome } from '@/components/payment-outcome';
+import { FocusAwareStatusBar } from '@/components/ui';
 import { OPERATORS } from '@/core/wallet-engine/operators';
-import type { OperatorId } from '@/core/wallet-engine/types';
 
+/**
+ * Portefeuille relié — réutilise la mise en scène de résultat portée de
+ * BlueWallet (`screen/send/success.tsx`, licence MIT), pour que toutes les
+ * fins de parcours d'EasyPay se ressemblent.
+ *
+ * Le signe est DESSINÉ, plus un caractère « ✓ » : un emoji change d'aspect
+ * selon le téléphone et casse l'alignement.
+ */
 export default function AddWalletSuccessScreen() {
   const router = useRouter();
   const { operator } = useLocalSearchParams<{ operator: OperatorId }>();
-  const operatorInfo = OPERATORS[operator];
+  const info = OPERATORS[operator];
 
   return (
-    <View className="flex-1 items-center justify-center bg-white p-6 dark:bg-black">
+    <>
       <FocusAwareStatusBar />
-      <View className="mb-6 size-20 items-center justify-center rounded-full bg-success-500">
-        <Text className="text-4xl font-bold text-white">✓</Text>
-      </View>
-      <Text className="mb-2 text-center text-2xl font-bold">
-        Portefeuille
-        {' '}
-        {operatorInfo.label}
-        {' '}
-        ajouté !
-      </Text>
-      <Text className="mb-8 text-center text-base text-neutral-500 dark:text-neutral-400">
-        Tu peux maintenant l'utiliser pour payer avec EasyPay.
-      </Text>
-      <SafeAreaView className="w-full">
-        <Button
-          label="Terminer"
-          onPress={() => router.replace('/(app)/wallets/')}
-          testID="wallet-add-success-finish-button"
-        />
-      </SafeAreaView>
-    </View>
+      <PaymentOutcome
+        issue="succes"
+        titre={`${info?.label ?? 'Portefeuille'} relié`}
+        message="Tu peux maintenant payer avec ce compte. Tu le retrouveras sur ton tableau de bord."
+        libelleBouton="Voir mes portefeuilles"
+        onBouton={() => router.replace('/(app)/wallets/')}
+        libelleSecondaire="Relier un autre compte"
+        onSecondaire={() => router.replace('/(app)/wallets/add')}
+      />
+    </>
   );
 }
