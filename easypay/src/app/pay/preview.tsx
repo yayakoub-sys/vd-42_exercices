@@ -1,23 +1,24 @@
+import type { ScannedQr } from '@/core/providers/types';
 import { useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import {
   Button,
   FocusAwareStatusBar,
+  Pressable,
   ScrollView,
   Text,
   View,
 } from '@/components/ui';
 import { formatEmvcoAmount, looksLikeEmvco, parseEmvcoPayment } from '@/core/emvco';
 import { resolveProvider } from '@/core/providers/registry';
-import type { ScannedQr } from '@/core/providers/types';
 import { usePaymentDraftStore } from '@/core/wallet-engine/paymentDraftStore';
 
 export default function PreviewScreen() {
   const router = useRouter();
-  const qr = usePaymentDraftStore((s) => s.qr);
-  const setQr = usePaymentDraftStore((s) => s.setQr);
-  const setAmount = usePaymentDraftStore((s) => s.setAmount);
+  const qr = usePaymentDraftStore(s => s.qr);
+  const setQr = usePaymentDraftStore(s => s.setQr);
+  const setAmount = usePaymentDraftStore(s => s.setAmount);
 
   React.useEffect(() => {
     if (!qr) {
@@ -55,7 +56,8 @@ export default function PreviewScreen() {
     if (Number.isFinite(qrAmount) && qrAmount > 0) {
       setAmount(qrAmount);
       router.push('/pay/choose-source');
-    } else {
+    }
+    else {
       router.push('/pay/amount');
     }
   }
@@ -89,6 +91,17 @@ export default function PreviewScreen() {
           onPress={handleContinue}
           testID="preview-continue-button"
         />
+        {/* Un ecran de paiement sans sortie est un ecran qui piege
+            (ETAT.md § 9.4 : « Apercu du QR — pas de bouton Annuler »). */}
+        <Pressable
+          onPress={() => router.replace('/(app)')}
+          className="mt-1 items-center py-3"
+          accessibilityRole="button"
+        >
+          <Text className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">
+            Annuler
+          </Text>
+        </Pressable>
       </View>
     </View>
   );

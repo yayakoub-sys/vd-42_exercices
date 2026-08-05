@@ -6,8 +6,8 @@ import { ScannerScreen } from '@/features/scanner/scanner-screen';
 
 export default function ScannerRoute() {
   const router = useRouter();
-  const setQr = usePaymentDraftStore((s) => s.setQr);
-  const reset = usePaymentDraftStore((s) => s.reset);
+  const setQr = usePaymentDraftStore(s => s.setQr);
+  const reset = usePaymentDraftStore(s => s.reset);
 
   function handleScanned(raw: string) {
     reset();
@@ -18,7 +18,9 @@ export default function ScannerRoute() {
   return (
     <ScannerScreen
       onScanned={handleScanned}
-      onOpenHistory={() => router.push('/(app)/history')}
+      // L'ecran de saisie manuelle existait deja mais AUCUN bouton de
+      // l'application n'y menait (ETAT.md § 9.4). Il est desormais atteignable.
+      onSaisieManuelle={() => router.push('/pay/manual-entry')}
     />
   );
 }

@@ -78,7 +78,13 @@ export type InitiatePaymentResult = {
 export async function initiatePayment({ amountFcfa }: InitiatePaymentParams): Promise<InitiatePaymentResult> {
   await delay(1600);
   const commission = computeCommission(amountFcfa);
-  if (amountFcfa > MOCK_BALANCE_FCFA) {
+
+  // Le récapitulatif annonce à l'utilisateur « Total débité = montant + frais ».
+  // La vérification ne portait pourtant que sur le montant : un paiement de
+  // 50 000 FCFA avec 250 FCFA de commission passait, alors que 50 250 FCFA ne
+  // tenaient pas dans un solde de 50 000 (incohérence relevée dans ETAT.md
+  // § 9.4). On compare désormais ce qui est réellement débité.
+  if (amountFcfa + commission > MOCK_BALANCE_FCFA) {
     return { success: false, commission, reason: 'insufficient_funds' };
   }
   return { success: true, commission };
