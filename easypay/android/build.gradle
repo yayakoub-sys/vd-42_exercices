@@ -38,6 +38,27 @@ allprojects {
 def correctifCmake = rootProject.file("fix-canonical-prefixes.cmake")
                                 .absolutePath.replace("\\", "/")
 
+// Troisieme volet du meme correctif, decouvert le 2026-08-05 en compilant enfin
+// pour de VRAIS telephones.
+//
+// CMAKE_OBJECT_PATH_MAX raccourcit les noms des fichiers OBJETS, mais pas le
+// dossier de build lui-meme. Par defaut chaque module natif compile dans
+//   node_modules/<module>/android/.cxx/<variante>/<hash>/<architecture>
+// soit deja 134 caracteres ici, avant le moindre fichier.
+//
+// Tant qu'on ne compilait que pour l'emulateur, ca passait : « Debug » et
+// « x86_64 » sont courts. Pour un vrai telephone, « RelWithDebInfo » et
+// « armeabi-v7a » ajoutent 14 caracteres — juste assez pour repasser au-dessus
+// de la limite, et react-native-mmkv echouait sur
+//   ninja: error: manifest 'build.ninja' still dirty after 100 tries
+//
+// Le module :app reglait deja ce probleme avec buildStagingDirectory (correctif
+// n° 4, voir app/build.gradle). On applique la meme parade aux bibliotheques de
+// node_modules, sans rien modifier a l'interieur de node_modules : chacune
+// compile dans C:/cxx-easypay/<module>, chemin court ET SANS ESPACE.
+// L'espace de « VAYA DIOMANDE » est la cause commune des trois volets.
+def racineCxx = "C:/cxx-easypay"
+
 subprojects { sub ->
   sub.afterEvaluate {
     def androidExt = sub.extensions.findByName("android")
@@ -46,6 +67,13 @@ subprojects { sub ->
         "-DCMAKE_OBJECT_PATH_MAX=240",
         "-DCMAKE_PROJECT_INCLUDE=${correctifCmake}".toString()
       )
+
+      // Seuls les modules qui compilent reellement du C++ sont concernes.
+      // `:app` a deja le sien, on ne le rejoue pas.
+      if (sub.name != "app" && androidExt.externalNativeBuild?.cmake?.path != null) {
+        androidExt.externalNativeBuild.cmake.buildStagingDirectory =
+          file("${racineCxx}/${sub.name}")
+      }
     }
   }
 }
