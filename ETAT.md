@@ -631,11 +631,52 @@ reconstruction sur ce poste. Le dégradé est rendu en pur JS.
 > **À dire tel quel : 1 sur le code, 0 sur l'écran.** Ne jamais présenter cette
 > carrosserie comme fonctionnelle avant de l'avoir regardée.
 
-### 11.4 Reste à porter
+### 11.4 Vagues 7 à 11 — le reste de l'application (2026-08-05)
 
-Paramètres (`screen/settings/*`), gestion des bénéficiaires, notifications, et le
-déverrouillage du démarrage de l'application par le code (l'écran de paiement est fait,
-l'ouverture de l'application ne l'est pas).
+| Vague | Contenu | Origine chez le donneur |
+|---|---|---|
+| 7 | Parcours de paiement complet : montant, choix du portefeuille, attente, réussite, échec, solde insuffisant, QR non reconnu, saisie manuelle | `AmountInput`, `SelectWallet`, `send/success`, `BlueBigCheckmark`, `TransactionPendingIconBig` |
+| 8 | Portefeuilles : détail, choix de l'opérateur, résultats de liaison | `WalletDetails`, `WalletTransactions`, `wallets/Add` |
+| 9 | Compte et paramètres, **français par défaut** | `settings/Settings` |
+| 10 | Inscription : code secret, date de naissance | `UnlockWith` |
+| 11 | **Verrouillage à l'ouverture de l'application** | `UnlockWith` |
+
+### 11.5 Défauts de fond corrigés dans ces vagues
+
+| Défaut | Où c'était consigné |
+|---|---|
+| `waiting.tsx` lançait un paiement de **0 FCFA** quand le montant manquait — et il « réussissait », créant une transaction fantôme | § 9.2 (cascade) |
+| Les paiements **échoués n'étaient enregistrés nulle part** : ils n'existaient pas dans l'historique | nouveau |
+| Le code secret acceptait **0000 et 1234** | § 9.4 |
+| La date de naissance était un **texte libre** : ni format, ni date réelle, ni âge minimum | § 9.4 |
+| Le code n'était **jamais demandé à l'ouverture** de l'application | § 9.3 |
+| « Language », « Theme », « System » en anglais — **il n'existait aucun fichier de traduction française** | § 9.4 |
+| Le numéro affiché **en clair** sur Compte, masqué de deux façons ailleurs | § 9.4 |
+| Le montant à payer **disparaissait** au moment de choisir le portefeuille | § 9.4 |
+| « Wave · Wave » répété | § 9.4 |
+
+### 11.6 L'APK — le fichier à envoyer par WhatsApp
+
+**`easypay/FABRIQUER-APK.ps1`** produit un seul fichier `.apk`, installable
+directement sur n'importe quel téléphone Android, sans PC ni Metro.
+
+> ⚠️ **Le piège à connaître.** `android/gradle.properties` est réglé sur
+> `reactNativeArchitectures=x86_64` : c'est l'architecture du **téléphone virtuel**.
+> Un APK compilé ainsi ne s'installe sur **aucun téléphone du commerce**. Le script
+> force `arm64-v8a,armeabi-v7a` en ligne de commande sans toucher au fichier, pour ne
+> pas casser la boucle émulateur.
+
+Le type `release` est signé avec la clé de développement : l'APK s'installe sans
+problème, mais **n'est pas publiable sur le Play Store** en l'état.
+
+### 11.7 Reste à faire
+
+- Vérification d'identité : elle demande le **type** de pièce, ni numéro ni photo, et
+  se déclare « vérifiée » après 3 secondes (§ 9.4). Non traité.
+- Conditions d'utilisation et politique de confidentialité : **texte vide** (§ 9.4).
+- Bénéficiaires enregistrés, notifications réelles.
+- **Rien de tout cela n'a été vu à l'écran.** Types et tests passent ; l'émulateur est
+  archivé.
 
 ---
 
