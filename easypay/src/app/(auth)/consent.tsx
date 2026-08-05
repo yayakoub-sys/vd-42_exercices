@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { Alert } from 'react-native';
 
 import {
   Button,
@@ -34,15 +33,18 @@ export default function ConsentScreen() {
         Avant chaque paiement, EasyPay te demandera toujours ton accord. Rien
         ne part jamais de ton argent sans que tu confirmes.
       </Text>
+      {/* Ces deux liens ouvraient une boite disant « bientot disponible »
+          (ETAT.md § 9.4). Faire accepter des conditions que personne ne peut
+          lire, c'est demander une signature sur une feuille blanche. */}
       <Text
         className="mb-2 text-base font-semibold text-primary-800 dark:text-primary-300"
-        onPress={() => Alert.alert('Conditions d\'utilisation', 'Le texte complet sera bientôt disponible ici.')}
+        onPress={() => router.push({ pathname: '/(auth)/legal', params: { doc: 'terms' } })}
       >
         Conditions d'utilisation
       </Text>
       <Text
         className="mb-6 text-base font-semibold text-primary-800 dark:text-primary-300"
-        onPress={() => Alert.alert('Politique de confidentialité', 'Le texte complet sera bientôt disponible ici.')}
+        onPress={() => router.push({ pathname: '/(auth)/legal', params: { doc: 'privacy' } })}
       >
         Politique de confidentialité
       </Text>
