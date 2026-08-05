@@ -1,8 +1,8 @@
+import { buildSampleEmvcoQr } from '../../__tests__/fixtures';
+import { genericEmvcoProvider } from '../genericEmvco';
+import { orangeMoneyProvider } from '../orangeMoney';
 import { resolveProvider } from '../registry';
 import { waveProvider } from '../wave';
-import { orangeMoneyProvider } from '../orangeMoney';
-import { genericEmvcoProvider } from '../genericEmvco';
-import { buildSampleEmvcoQr } from '../../__tests__/fixtures';
 
 describe('resolveProvider', () => {
   it('reconnaît un QR marchand Wave', () => {
@@ -25,7 +25,7 @@ describe('resolveProvider', () => {
     expect(provider).toBe(genericEmvcoProvider);
   });
 
-  it("ne reconnaît rien pour un texte qui n'est ni un lien Wave ni un paiement EMVCo", () => {
+  it('ne reconnaît rien pour un texte qui n\'est ni un lien Wave ni un paiement EMVCo', () => {
     const provider = resolveProvider({ raw: 'bonjour le monde' });
     expect(provider).toBeUndefined();
   });

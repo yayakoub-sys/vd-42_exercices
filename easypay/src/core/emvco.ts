@@ -7,12 +7,12 @@
  * Ex: "5802CI" => tag 58, longueur 2, valeur "CI" (pays).
  */
 
-export interface EmvcoTag {
+export type EmvcoTag = {
   tag: string;
   value: string;
   /** Sous-blocs, uniquement pour les tags "template" (26 à 51, 62). */
   children?: EmvcoTag[];
-}
+};
 
 const TEMPLATE_TAG_RANGE = { min: 26, max: 51 };
 const ADDITIONAL_DATA_TAG = '62';
@@ -52,10 +52,10 @@ export function parseTlv(data: string): EmvcoTag[] {
 }
 
 function findTag(tags: EmvcoTag[], tag: string): EmvcoTag | undefined {
-  return tags.find((t) => t.tag === tag);
+  return tags.find(t => t.tag === tag);
 }
 
-export interface EmvcoPayment {
+export type EmvcoPayment = {
   raw: string;
   tags: EmvcoTag[];
   payloadFormatIndicator?: string;
@@ -66,7 +66,7 @@ export interface EmvcoPayment {
   amount?: string;
   /** Identifiants (GUID) trouvés dans les blocs marchands 26-51, utiles pour reconnaître l'opérateur. */
   merchantAccountGuids: string[];
-}
+};
 
 /**
  * Vérifie qu'une chaîne ressemble à un QR de paiement EMVCo valide
@@ -78,18 +78,19 @@ export function looksLikeEmvco(raw: string): boolean {
 
 /** Codes ISO 4217 les plus utiles pour l'Afrique de l'Ouest francophone. */
 const CURRENCY_CODES: Record<string, string> = {
-  '952': 'FCFA', // XOF
+  952: 'FCFA', // XOF
 };
 
 /** Transforme un montant EMVCo brut ("1500") en texte lisible ("1 500 FCFA"). */
 export function formatEmvcoAmount(amount?: string, currencyCode?: string): string | undefined {
-  if (!amount) return undefined;
+  if (!amount)
+    return undefined;
   const numeric = Number(amount);
   // toLocaleString('fr-FR') insère une espace fine insécable (U+202F) entre les
   // milliers ; certaines polices Android l'affichent mal, on la remplace par
   // une espace normale pour un rendu fiable sur tous les téléphones.
   const formattedNumber = Number.isFinite(numeric)
-    ? numeric.toLocaleString('fr-FR').replace(/ /g, ' ')
+    ? numeric.toLocaleString('fr-FR').replace(/\u202F/g, ' ')
     : amount;
   const unit = currencyCode ? CURRENCY_CODES[currencyCode] : undefined;
   return unit ? `${formattedNumber} ${unit}` : formattedNumber;
@@ -103,7 +104,8 @@ export function parseEmvcoPayment(raw: string): EmvcoPayment {
     const numeric = Number(tag.tag);
     if (numeric >= TEMPLATE_TAG_RANGE.min && numeric <= TEMPLATE_TAG_RANGE.max && tag.children) {
       const guid = findTag(tag.children, '00');
-      if (guid) merchantAccountGuids.push(guid.value);
+      if (guid)
+        merchantAccountGuids.push(guid.value);
     }
   }
 

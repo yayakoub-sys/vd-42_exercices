@@ -23,7 +23,7 @@ export default function PinCreateScreen() {
   return (
     <View className="flex-1 bg-white p-6 dark:bg-black">
       <FocusAwareStatusBar />
-      <Text className="mb-2 mt-4 text-2xl font-bold">
+      <Text className="mt-4 mb-2 text-2xl font-bold">
         Choisis un code secret
       </Text>
       <Text className="mb-6 text-base text-gray-600 dark:text-neutral-400">

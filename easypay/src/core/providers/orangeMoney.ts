@@ -1,10 +1,11 @@
+import type { PaymentProvider, ProviderAction, ScannedQr } from './types';
 import { looksLikeEmvco, parseEmvcoPayment } from '../emvco';
 import { KNOWN_MERCHANT_GUIDS } from './knownGuids';
-import type { PaymentProvider, ProviderAction, ScannedQr } from './types';
 
 function matchesKnownGuid(qr: ScannedQr): boolean {
-  if (!qr.emvco) return false;
-  return qr.emvco.merchantAccountGuids.some((guid) => KNOWN_MERCHANT_GUIDS[guid] === 'orange_money');
+  if (!qr.emvco)
+    return false;
+  return qr.emvco.merchantAccountGuids.some(guid => KNOWN_MERCHANT_GUIDS[guid] === 'orange_money');
 }
 
 /**
@@ -14,7 +15,8 @@ function matchesKnownGuid(qr: ScannedQr): boolean {
  * C'est une approximation, assumée comme telle (voir README).
  */
 function matchesNameHeuristic(qr: ScannedQr): boolean {
-  if (!qr.emvco) return false;
+  if (!qr.emvco)
+    return false;
   const haystack = `${qr.emvco.merchantName ?? ''}`.toLowerCase();
   return haystack.includes('orange') || haystack.includes(' om ') || haystack.startsWith('om ');
 }

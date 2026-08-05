@@ -22,7 +22,7 @@ export default function ConsentScreen() {
   return (
     <View className="flex-1 bg-white p-6 dark:bg-black">
       <FocusAwareStatusBar />
-      <Text className="mb-2 mt-4 text-2xl font-bold">
+      <Text className="mt-4 mb-2 text-2xl font-bold">
         Avant de continuer
       </Text>
       <Text className="mb-4 text-base text-gray-600 dark:text-neutral-400">

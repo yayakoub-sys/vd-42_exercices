@@ -2,196 +2,204 @@ import type { AuthState, KycProfile } from '@/core/wallet-engine/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
+import { Alert, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Alert } from 'react-native';
-import {
-  FocusAwareStatusBar,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from '@/components/ui';
-import { ArrowRight } from '@/components/ui/icons';
+import { FocusAwareStatusBar, Pressable, Text, View } from '@/components/ui';
+import { masquerNumero } from '@/components/wallet-card';
 import { LanguageItem } from '@/features/settings/components/language-item';
 import { SettingsContainer } from '@/features/settings/components/settings-container';
 import { ThemeItem } from '@/features/settings/components/theme-item';
 import { getAuthState } from '@/storage/authState';
 import { getKycProfile } from '@/storage/kycState';
 
-function getInitials(name?: string): string {
-  if (!name)
+/**
+ * COMPTE — porté depuis BlueWallet `screen/settings/Settings.tsx`
+ * (licence MIT, voir LICENSE-BLUEWALLET).
+ *
+ * REPRIS : des sections coiffées d'un titre en petites capitales grises, des
+ * lignes plates séparées par des filets, et les actions dangereuses reléguées
+ * tout en bas, détachées du reste. Sur un écran de réglages, ce sont les
+ * SÉPARATIONS qui rendent la liste lisible, pas les cadres.
+ *
+ * CORRIGÉ : l'écran commençait par un `pt-16` en dur, qui ne tient pas compte
+ * de l'encoche. Il respecte maintenant la zone sûre, comme les autres.
+ *
+ * Et le numéro de téléphone est désormais MASQUÉ ici comme partout ailleurs :
+ * il était affiché en clair sur cet écran seulement, avec deux masquages
+ * différents dans le reste de l'application (ETAT.md § 9.4).
+ */
+
+function initiales(nom?: string): string {
+  if (!nom)
     return '?';
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0)
+  const parties = nom.trim().split(/\s+/).filter(Boolean);
+  if (parties.length === 0)
     return '?';
-  const first = parts[0].charAt(0);
-  const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
-  return (first + last).toUpperCase();
+  const premiere = parties[0].charAt(0);
+  const derniere = parties.length > 1 ? parties[parties.length - 1].charAt(0) : '';
+  return (premiere + derniere).toUpperCase();
 }
 
-function SectionTitle({ children }: { children: string }) {
-  return <Text className="pt-4 pb-2 text-lg">{children}</Text>;
+function TitreSection({ children }: { children: string }) {
+  return (
+    <Text className="px-1 pt-7 pb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase dark:text-neutral-500">
+      {children}
+    </Text>
+  );
 }
 
-function AccountItem({
-  label,
+function Ligne({
+  libelle,
   onPress,
-  danger,
+  danger = false,
 }: {
-  label: string;
+  libelle: string;
   onPress?: () => void;
   danger?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      pointerEvents={onPress ? 'auto' : 'none'}
-      className="flex-1 flex-row items-center justify-between px-4 py-3"
+      className="flex-row items-center justify-between p-4"
+      accessibilityRole="button"
     >
-      <Text className={danger ? 'text-danger-600' : undefined}>{label}</Text>
-      {onPress
-        ? (
-            <ArrowRight />
-          )
-        : null}
+      <Text className={danger ? 'text-base font-semibold text-danger-600' : 'text-base'}>
+        {libelle}
+      </Text>
+      {onPress ? <Text className="text-neutral-300 dark:text-neutral-600">›</Text> : null}
     </Pressable>
+  );
+}
+
+function Identite({ kyc, auth }: { kyc: KycProfile | null; auth: AuthState | null }) {
+  const verifie = kyc?.status === 'verified';
+  return (
+    <View className="flex-row items-center rounded-2xl bg-neutral-100 p-4 dark:bg-neutral-800">
+      <View className="mr-4 size-14 items-center justify-center rounded-full bg-primary-800">
+        <Text className="text-lg font-bold text-white">{initiales(kyc?.fullName)}</Text>
+      </View>
+      <View className="flex-1">
+        <Text className="text-base font-semibold">
+          {kyc?.fullName ?? 'Nom non renseigné'}
+        </Text>
+        <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+          {auth?.phoneNumber ? masquerNumero(auth.phoneNumber) : 'Numéro non renseigné'}
+        </Text>
+        <View
+          className={`mt-2 self-start rounded-full px-3 py-1 ${
+            verifie
+              ? 'bg-success-100 dark:bg-success-900'
+              : 'bg-warning-100 dark:bg-warning-900'
+          }`}
+        >
+          <Text
+            className={`text-xs font-semibold ${
+              verifie
+                ? 'text-success-700 dark:text-success-300'
+                : 'text-warning-700 dark:text-warning-300'
+            }`}
+          >
+            {verifie ? 'Identité vérifiée' : 'Identité à vérifier'}
+          </Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
 export default function AccountHomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [auth, setAuth] = React.useState<AuthState | null>(null);
   const [kyc, setKyc] = React.useState<KycProfile | null>(null);
 
-  const load = React.useCallback(() => {
+  const charger = React.useCallback(() => {
     getAuthState().then(setAuth);
     getKycProfile().then(setKyc);
   }, []);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      load();
-    }, [load]),
-  );
+  useFocusEffect(React.useCallback(() => charger(), [charger]));
 
-  const isVerified = kyc?.status === 'verified';
-
-  const onLogout = () => {
-    Alert.alert(
-      'Se déconnecter',
-      'Tu devras te reconnecter pour utiliser EasyPay la prochaine fois.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: () => router.replace('/(auth)/welcome'),
-        },
-      ],
-    );
+  const deconnexion = () => {
+    Alert.alert('Se déconnecter', 'Tu devras te reconnecter pour utiliser EasyPay.', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Se déconnecter',
+        style: 'destructive',
+        onPress: () => router.replace('/(auth)/welcome'),
+      },
+    ]);
   };
 
-  const onDeleteAccount = () => {
+  const suppression = () => {
     Alert.alert(
       'Supprimer mon compte',
-      'Cette action est définitive : toutes tes informations seraient supprimées. Veux-tu continuer ?',
+      'Cette action est définitive : toutes tes informations seraient supprimées.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Supprimer',
           style: 'destructive',
           onPress: () =>
-            Alert.alert(
-              'Demande enregistrée',
-              'Ta demande de suppression a bien été prise en compte.',
-            ),
+            Alert.alert('Demande enregistrée', 'Ta demande a bien été prise en compte.'),
         },
       ],
     );
   };
 
   return (
-    <>
+    <View className="flex-1 bg-white dark:bg-black">
       <FocusAwareStatusBar />
-      <ScrollView>
-        <View className="flex-1 px-4 pt-16 pb-10">
-          <Text className="text-xl font-bold">Compte</Text>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 32,
+          paddingHorizontal: 16,
+        }}
+      >
+        <Text className="pb-4 text-[28px] font-bold">Compte</Text>
 
-          <View className="mt-4 flex-row items-center rounded-md border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-800">
-            <View className="mr-4 size-14 items-center justify-center rounded-full bg-primary-800 dark:bg-primary-600">
-              <Text className="text-lg font-bold text-white">
-                {getInitials(kyc?.fullName)}
-              </Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold">
-                {kyc?.fullName ?? 'Nom non renseigné'}
-              </Text>
-              <Text className="text-sm text-neutral-500 dark:text-neutral-400">
-                {auth?.phoneNumber ?? 'Numéro non renseigné'}
-              </Text>
-              <View
-                className={
-                  isVerified
-                    ? 'mt-2 self-start rounded-full bg-success-100 px-3 py-1 dark:bg-success-900'
-                    : 'mt-2 self-start rounded-full bg-warning-100 px-3 py-1 dark:bg-warning-900'
-                }
-              >
-                <Text
-                  className={
-                    isVerified
-                      ? 'text-xs font-semibold text-success-700 dark:text-success-300'
-                      : 'text-xs font-semibold text-warning-700 dark:text-warning-300'
-                  }
-                >
-                  {isVerified ? 'Identité vérifiée ✓' : 'Vérification en attente'}
-                </Text>
-              </View>
-            </View>
-          </View>
+        <Identite kyc={kyc} auth={auth} />
 
-          <SectionTitle>Mon compte</SectionTitle>
-          <SettingsContainer>
-            <AccountItem label="Profil" onPress={() => router.push('/(app)/account/profile')} />
-            <AccountItem
-              label="Mes documents"
-              onPress={() => router.push('/(app)/account/documents')}
-            />
-            <AccountItem label="Sécurité" onPress={() => router.push('/(app)/account/security')} />
-            <AccountItem
-              label="Notifications"
-              onPress={() => router.push('/(app)/account/notifications')}
-            />
-          </SettingsContainer>
+        <TitreSection>Mon compte</TitreSection>
+        <SettingsContainer>
+          <Ligne libelle="Profil" onPress={() => router.push('/(app)/account/profile')} />
+          <Ligne libelle="Mes documents" onPress={() => router.push('/(app)/account/documents')} />
+          <Ligne libelle="Sécurité" onPress={() => router.push('/(app)/account/security')} />
+          <Ligne
+            libelle="Notifications"
+            onPress={() => router.push('/(app)/account/notifications')}
+          />
+        </SettingsContainer>
 
-          <SectionTitle>Général</SectionTitle>
-          <SettingsContainer>
-            <LanguageItem />
-            <ThemeItem />
-          </SettingsContainer>
+        <TitreSection>Général</TitreSection>
+        <SettingsContainer>
+          <LanguageItem />
+          <ThemeItem />
+        </SettingsContainer>
 
-          <SectionTitle>Assistance</SectionTitle>
-          <SettingsContainer>
-            <AccountItem label="Aide" onPress={() => router.push('/(app)/account/help')} />
-            <AccountItem
-              label="Contacter le support"
-              onPress={() => router.push('/(app)/account/support')}
-            />
-            <AccountItem label="À propos" onPress={() => router.push('/(app)/account/about')} />
-          </SettingsContainer>
+        <TitreSection>Assistance</TitreSection>
+        <SettingsContainer>
+          <Ligne libelle="Aide" onPress={() => router.push('/(app)/account/help')} />
+          <Ligne
+            libelle="Contacter le support"
+            onPress={() => router.push('/(app)/account/support')}
+          />
+          <Ligne libelle="À propos" onPress={() => router.push('/(app)/account/about')} />
+        </SettingsContainer>
 
-          <View className="mt-8 items-center">
-            <Pressable onPress={onLogout} className="py-3">
-              <Text className="text-base font-semibold text-danger-600">Se déconnecter</Text>
-            </Pressable>
-            <Pressable onPress={onDeleteAccount} className="py-2">
-              <Text className="text-sm text-neutral-400 dark:text-neutral-500">
-                Supprimer mon compte
-              </Text>
-            </Pressable>
-          </View>
+        <View className="mt-10 items-center">
+          <Pressable onPress={deconnexion} className="py-3" accessibilityRole="button">
+            <Text className="text-base font-semibold text-danger-600">Se déconnecter</Text>
+          </Pressable>
+          <Pressable onPress={suppression} className="py-2" accessibilityRole="button">
+            <Text className="text-sm text-neutral-400 dark:text-neutral-500">
+              Supprimer mon compte
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
-    </>
+    </View>
   );
 }

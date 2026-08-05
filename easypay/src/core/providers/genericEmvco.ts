@@ -1,5 +1,5 @@
-import { looksLikeEmvco, parseEmvcoPayment } from '../emvco';
 import type { PaymentProvider, ProviderAction, ScannedQr } from './types';
+import { looksLikeEmvco, parseEmvcoPayment } from '../emvco';
 
 /**
  * Filet de sécurité : si le QR est un paiement EMVCo valide mais qu'aucun
@@ -23,7 +23,7 @@ export const genericEmvcoProvider: PaymentProvider = {
     return {
       type: 'unsupported',
       reason:
-        "Ce QR suit le format standard de paiement, mais je ne sais pas encore à quel opérateur il appartient.",
+        'Ce QR suit le format standard de paiement, mais je ne sais pas encore à quel opérateur il appartient.',
     };
   },
 };

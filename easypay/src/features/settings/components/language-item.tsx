@@ -18,10 +18,13 @@ export function LanguageItem() {
     [setLanguage, modal],
   );
 
+  // Le francais en premier : c'est la langue de reference d'EasyPay.
+  // L'arabe du modele de depart n'est pas propose ici, il ne correspond a
+  // aucun usage du produit (ETAT.md § 9.4).
   const langs = React.useMemo(
     () => [
+      { label: translate('settings.french'), value: 'fr' },
       { label: translate('settings.english'), value: 'en' },
-      { label: translate('settings.arabic'), value: 'ar' },
     ],
     [],
   );

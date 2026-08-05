@@ -20,7 +20,7 @@ describe('parseTlv', () => {
     ]);
   });
 
-  it("ne plante pas sur une chaîne tronquée ou invalide", () => {
+  it('ne plante pas sur une chaîne tronquée ou invalide', () => {
     expect(() => parseTlv('abc')).not.toThrow();
     expect(parseTlv('abc')).toEqual([]);
   });
@@ -61,7 +61,7 @@ describe('formatEmvcoAmount', () => {
     expect(formatEmvcoAmount('1500', '952')).toBe('1 500 FCFA');
   });
 
-  it("laisse le montant brut si la devise n'est pas connue", () => {
+  it('laisse le montant brut si la devise n\'est pas connue', () => {
     expect(formatEmvcoAmount('1500', '840')).toBe('1 500');
   });
 

@@ -1,7 +1,7 @@
-import * as Crypto from 'expo-crypto';
-
-import { getItem, setItem } from '@/lib/storage';
 import type { AuthState } from '@/core/wallet-engine/types';
+
+import * as Crypto from 'expo-crypto';
+import { getItem, setItem } from '@/lib/storage';
 
 const AUTH_KEY = 'auth_state_v1';
 // Le code secret n'est jamais stocké en clair : on garde un sel aléatoire propre à
@@ -12,7 +12,7 @@ const PIN_HASH_KEY = 'auth_pin_hash_v1';
 
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
+    .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
@@ -41,7 +41,8 @@ export async function setPin(pin: string): Promise<void> {
 export async function verifyPin(pin: string): Promise<boolean> {
   const salt = getItem<string>(PIN_SALT_KEY);
   const storedHash = getItem<string>(PIN_HASH_KEY);
-  if (!salt || !storedHash) return false;
+  if (!salt || !storedHash)
+    return false;
   const hash = await hashPin(pin, salt);
   return hash === storedHash;
 }

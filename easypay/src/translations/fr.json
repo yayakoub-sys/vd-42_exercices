@@ -1,0 +1,34 @@
+{
+  "onboarding": {
+    "message": "Bienvenue sur EasyPay"
+  },
+  "settings": {
+    "about": "À propos",
+    "app_name": "Nom de l'application",
+    "arabic": "Arabe",
+    "english": "Anglais",
+    "french": "Français",
+    "generale": "Général",
+    "github": "Github",
+    "language": "Langue",
+    "links": "Liens",
+    "logout": "Se déconnecter",
+    "more": "Plus",
+    "privacy": "Politique de confidentialité",
+    "rate": "Noter l'application",
+    "share": "Partager",
+    "support": "Assistance",
+    "support_us": "Nous soutenir",
+    "terms": "Conditions d'utilisation",
+    "theme": {
+      "dark": "Sombre",
+      "light": "Clair",
+      "system": "Comme le téléphone",
+      "title": "Apparence"
+    },
+    "title": "Paramètres",
+    "version": "Version",
+    "website": "Site web"
+  },
+  "welcome": "Bienvenue sur EasyPay"
+}

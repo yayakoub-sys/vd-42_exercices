@@ -1,5 +1,5 @@
-import { getItem, removeItem, setItem } from '@/lib/storage';
 import type { PaymentTransaction } from '@/core/wallet-engine/types';
+import { getItem, removeItem, setItem } from '@/lib/storage';
 
 const TRANSACTIONS_KEY = 'payment_transactions_v1';
 const HISTORY_LIMIT = 50;
@@ -10,7 +10,7 @@ export async function getTransactions(): Promise<PaymentTransaction[]> {
 
 export async function getTransaction(id: string): Promise<PaymentTransaction | undefined> {
   const all = await getTransactions();
-  return all.find((t) => t.id === id);
+  return all.find(t => t.id === id);
 }
 
 export async function addTransaction(transaction: PaymentTransaction): Promise<PaymentTransaction[]> {

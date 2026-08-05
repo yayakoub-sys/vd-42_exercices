@@ -1,12 +1,12 @@
 export type OperatorId = 'wave' | 'orange_money' | 'push_ci' | 'djamo' | 'mtn_momo' | 'moov_money';
 
-export interface OperatorInfo {
+export type OperatorInfo = {
   id: OperatorId;
   label: string;
   color: string;
-}
+};
 
-export interface LinkedWallet {
+export type LinkedWallet = {
   id: string;
   operator: OperatorId;
   phoneNumber: string;
@@ -14,11 +14,11 @@ export interface LinkedWallet {
   isDefault: boolean;
   status: 'active' | 'pending' | 'failed';
   linkedAt: number;
-}
+};
 
 export type TransactionStatus = 'success' | 'failed' | 'insufficient_funds';
 
-export interface PaymentTransaction {
+export type PaymentTransaction = {
   id: string;
   timestamp: number;
   merchantQrRaw: string;
@@ -31,19 +31,19 @@ export interface PaymentTransaction {
   sourceOperatorLabel: string;
   commission: number;
   status: TransactionStatus;
-}
+};
 
 export type KycStatus = 'not_started' | 'pending' | 'verified' | 'rejected';
 
-export interface KycProfile {
+export type KycProfile = {
   fullName?: string;
   birthDate?: string;
   idDocumentType?: string;
   status: KycStatus;
-}
+};
 
-export interface AuthState {
+export type AuthState = {
   phoneNumber?: string;
   pinSet: boolean;
   consentAccepted: boolean;
-}
+};

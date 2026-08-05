@@ -1,6 +1,7 @@
+import type { KycStatus } from '@/core/wallet-engine/types';
 import { useRouter } from 'expo-router';
-import * as React from 'react';
 
+import * as React from 'react';
 import {
   ActivityIndicator,
   Button,
@@ -11,7 +12,6 @@ import {
   View,
 } from '@/components/ui';
 import { getKycProfile } from '@/storage/kycState';
-import type { KycStatus } from '@/core/wallet-engine/types';
 
 export default function KycStatusScreen() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function KycStatusScreen() {
         : (
             <>
               <ActivityIndicator size="large" color={colors.primary[800]} />
-              <Text className="mb-2 mt-6 text-2xl font-bold">
+              <Text className="mt-6 mb-2 text-2xl font-bold">
                 Vérification en cours...
               </Text>
               <Text className="text-center text-base text-gray-600 dark:text-neutral-400">

@@ -8,8 +8,8 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { useIsFirstTime } from '@/lib/hooks';
 import { Cover } from '@/features/onboarding/components/cover';
+import { useIsFirstTime } from '@/lib/hooks';
 
 export default function WelcomeScreen() {
   const [_, setIsFirstTime] = useIsFirstTime();

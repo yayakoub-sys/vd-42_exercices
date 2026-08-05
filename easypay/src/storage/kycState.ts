@@ -1,5 +1,5 @@
-import { getItem, setItem } from '@/lib/storage';
 import type { KycProfile } from '@/core/wallet-engine/types';
+import { getItem, setItem } from '@/lib/storage';
 
 const KYC_KEY = 'kyc_profile_v1';
 
