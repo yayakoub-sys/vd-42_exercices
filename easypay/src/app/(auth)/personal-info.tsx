@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from '@/components/ui';
+import { formaterSaisieDate, verifierDateNaissance } from '@/features/auth/birth-date';
 import { saveKycInfo } from '@/storage/kycState';
 
 const ID_DOCUMENT_TYPES = [
@@ -31,9 +32,17 @@ export default function PersonalInfoScreen() {
       setError('Remplis tous les champs pour continuer.');
       return;
     }
+    // La date etait un TEXTE LIBRE : ni format, ni date reelle, ni age minimum
+    // (ETAT.md § 9.4). On pouvait naitre en 2050. Sur un produit financier,
+    // l'age n'est pas un detail de formulaire.
+    const verdict = verifierDateNaissance(birthDate);
+    if (!verdict.valide) {
+      setError(verdict.raison);
+      return;
+    }
     setError('');
     setLoading(true);
-    await saveKycInfo({ fullName, birthDate, idDocumentType });
+    await saveKycInfo({ fullName: fullName.trim(), birthDate, idDocumentType });
     setLoading(false);
     router.push('/(auth)/kyc-status');
   };
@@ -59,7 +68,9 @@ export default function PersonalInfoScreen() {
         placeholder="JJ/MM/AAAA"
         keyboardType="number-pad"
         value={birthDate}
-        onChangeText={setBirthDate}
+        // Met en forme au fil de la frappe : 15031990 devient 15/03/1990.
+        onChangeText={v => setBirthDate(formaterSaisieDate(v))}
+        maxLength={10}
         testID="personal-info-birthdate-input"
       />
       <Text className="text-grey-100 mb-2 text-lg dark:text-neutral-100">
